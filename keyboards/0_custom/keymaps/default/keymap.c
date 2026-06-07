@@ -26,6 +26,8 @@ enum tap_dances {
 // English and reveal _BASE for the duration of the hold, then switch back.
 enum custom_keycodes {
     TEMP_EN = QK_USER,
+    ARROW_FAT,  // =>
+    ARROW_THIN, // ->
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -52,15 +54,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_SCLN,     KC_J,        KC_M,        KC_U,        KC_B,        KC_Q,        KC_PAUS,     XXXXXXX,             XXXXXXX,     KC_PSCR,     KC_Z,        KC_H,        KC_T,        KC_C,        KC_MINS,     KC_EQL,
         KC_TAB,      KC_L,        KC_R,        KC_E,        KC_O,        KC_P,        KC_SLSH,     KC_BSLS,             KC_INS,      KC_QUOT,     KC_K,        KC_I,        KC_N,        KC_A,        KC_S,        KC_ENT,
         KC_DEL,      KC_W,        KC_F,        KC_Y,        KC_D,        KC_X,        KC_HOME,     KC_END,              KC_CAPS,     KC_COMM,     KC_DOT,      KC_G,        KC_V,        KC_LBRC,     KC_RBRC,     KC_BSPC,
-        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_LSFT,     KC_SPC,      KC_ENT,              TD(TD_LALT), KC_SPC,      TD(TD_RSFT), TD(TD_RCTL), KC_LEFT,     KC_UP,       KC_DOWN,     KC_RGHT
+        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_ENT,              TD(TD_LALT), TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_UP,       KC_DOWN,     KC_RGHT
     ),
 
     [_FN] = LAYOUT(
         _______,     _______,     _______,     _______,     _______,     _______,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     _______,     _______,     _______,     _______,     _______,     _______,
         _______,     KC_P1,       KC_P2,       KC_P3,       KC_P4,       KC_P5,       _______,     XXXXXXX,             XXXXXXX,     _______,     KC_P6,       KC_P7,       KC_P8,       KC_P9,       KC_P0,       _______,
-        _______,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_MPLY,     XXXXXXX,             XXXXXXX,     KC_NUM,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PMNS,     KC_PPLS,
-        _______,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PSLS,     _______,             _______,     _______,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PAST,     KC_PEQL,
-        _______,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     _______,     _______,             _______,     KC_PCMM,     KC_PDOT,     XXXXXXX,     XXXXXXX,     _______,     _______,     _______,
+        _______,     KC_MPRV,     KC_MNXT,     XXXXXXX,     KC_VOLD,     KC_VOLU,     KC_MPLY,     XXXXXXX,             XXXXXXX,     KC_NUM,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PMNS,     KC_PPLS,
+        _______,     C(KC_A),     C(KC_S),     C(KC_H),     C(KC_F),     XXXXXXX,     KC_PSLS,     _______,             _______,     _______,     XXXXXXX,     ARROW_FAT,   ARROW_THIN,  XXXXXXX,     KC_PAST,     KC_PEQL,
+        _______,     C(KC_Z),     C(KC_X),     C(KC_C),     C(KC_V),     XXXXXXX,     _______,     _______,             KC_LSCR,     KC_PCMM,     KC_PDOT,     XXXXXXX,     XXXXXXX,     _______,     _______,     _______,
         _______,     TO(_BASE),   _______,     _______,     _______,     _______,     _______,     KC_PENT,             _______,     _______,     _______,     _______,     _______,     _______,     _______,     _______
     ),
 
@@ -70,8 +72,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_SCLN,     KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_PAUS,     XXXXXXX,             XXXXXXX,     KC_PSCR,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_MINS,     KC_EQL,
         KC_TAB,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_BSLS,             KC_INS,      KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_P,        KC_ENT,
         KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        KC_B,        KC_HOME,     KC_END,              TEMP_EN,     KC_LBRC,     KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_RBRC,     KC_BSPC,
-        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_LSFT,     KC_SPC,      KC_ENT,              TD(TD_LALT), KC_SPC,      TD(TD_RSFT), TD(TD_RCTL), KC_LEFT,     KC_UP,       KC_DOWN,     KC_RGHT
+        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_ENT,              TD(TD_LALT), TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_UP,       KC_DOWN,     KC_RGHT
     )
+
 };
 
 // clang-format on
@@ -264,6 +267,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 temp_en_suspended = false;
                 tap_code16(LGUI(KC_SPC));
             }
+            return false;
+
+        case ARROW_FAT:
+            if (record->event.pressed) SEND_STRING("=>");
+            return false;
+
+        case ARROW_THIN:
+            if (record->event.pressed) SEND_STRING("->");
             return false;
     }
     return true;
