@@ -13,13 +13,13 @@ enum layers {
     _QWERTY // Standard QWERTY
 };
 
-// Tap dance indices for Alt/Ctrl modifier keys:
-//   single hold      → hold the base modifier
-//   double-tap+hold  → hold Shift + base modifier
+// Tap dance indices for custom modifier keys:
+//   tap / hold       → send or hold the base modifier
+//   double-tap+hold  → hold the configured modifier combo
 enum tap_dances {
-    TD_RSFT, // Right Shift + Left Alt
-    TD_LALT, // Left Alt + Left Ctrl
-    TD_RCTL, // Right Ctrl + Right Shift
+    TD_RSFT, // base: RSFT, double-hold combo: LALT + RSFT
+    TD_LALT, // base: LALT, double-hold combo: LALT + RCTL
+    TD_RCTL, // base: RCTL, double-hold combo: RSFT + RCTL
 };
 
 // TEMP_EN: right-side key on _QWERTY — temporarily switch the OS IME to
@@ -46,36 +46,31 @@ bool get_combo_must_hold(uint16_t combo_index, combo_t *combo) {
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-
-    /* _BASE – Ergonomic layout (default) */
     [_BASE] = LAYOUT(
         KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_PGUP,
         KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_F6,      XXXXXXX,            XXXXXXX,    KC_F7,      KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_PGDN,
         KC_SCLN,    KC_J,       KC_M,       KC_U,       KC_B,       KC_Q,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_COMM,    KC_DOT,     KC_Y,       KC_T,       KC_C,       KC_Q,       KC_SCLN,
         KC_TAB,     KC_L,       KC_R,       KC_R,       KC_R,       KC_D,       KC_SLSH,    KC_BSLS,            KC_INS,     KC_QUOT,    KC_L,       KC_I,       KC_T,       KC_I,       KC_P,       KC_EQL,
         KC_DEL,     KC_W,       KC_W,       KC_C,       KC_F,       KC_X,       KC_HOME,    KC_END,             KC_BSLS,    KC_X,       KC_P,       KC_L,       KC_Y,       KC_J,       KC_RBRC,    KC_BSPC,
-        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             TD(TD_LALT),TD(TD_RSFT),KC_SPC,     TD(TD_RCTL),KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
-
+        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_LSFT,    KC_LSFT,    KC_ENT,             TD(TD_LALT),TD(TD_RSFT),TD(TD_RSFT),TD(TD_RCTL),KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
     ),
 
-    /* _FN – Function / shortcut layer */
     [_FN] = LAYOUT(
-        TO(_BASE),  _______,    _______,    _______,    _______,    _______,    XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    _______,    _______,    _______,    _______,    _______,    _______,
-        _______,    KC_P1,      KC_P2,      KC_P3,      KC_P4,      KC_P5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_P6,      KC_P7,      KC_P8,      KC_P9,      KC_P0,      _______,
-        _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_PSCR,    XXXXXXX,            XXXXXXX,    KC_NUM,     XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_PCMM,
-        KC_PMNS,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_MPLY,    XXXXXXX,            _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_PAST,    KC_PPLS,
-        _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,            _______,    KC_PSLS,    XXXXXXX,    XXXXXXX,    KC_PDOT,    XXXXXXX,    XXXXXXX,    _______,
-        _______,    TO(_BASE),  _______,    _______,    _______,    _______,    _______,    _______,            TO(_BASE),  _______,    _______,    KC_PEQL,    _______,    _______,    _______,    _______,
+        _______,    _______,    _______,    _______,    _______,    _______,    XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    _______,    _______,    _______,    _______,    _______,    _______,
+        _______,    KC_P1,      KC_P2,      KC_P3,      KC_P4,      KC_P5,      _______,    XXXXXXX,            XXXXXXX,    _______,    KC_P6,      KC_P7,      KC_P8,      KC_P9,      KC_P0,      _______,
+        _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_MPLY,    XXXXXXX,            XXXXXXX,    KC_NUM,     XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_PMNS,    KC_PPLS,
+        _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_MPLY,    _______,            _______,    _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    KC_PAST,    KC_PEQL,
+        _______,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    _______,    _______,            _______,    KC_PCMM,    KC_PDOT,    XXXXXXX,    KC_PDOT,    _______,    _______,    _______,
+        _______,    TO(_BASE),  _______,    _______,    _______,    _______,    _______,    KC_PENT,            _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,
     ),
 
-    /* _QWERTY – Standard QWERTY layout */
     [_QWERTY] = LAYOUT(
-        KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F12,     KC_PGUP,
-        KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_F10,     XXXXXXX,            XXXXXXX,    KC_F11,     KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_PGDN,
-        KC_TAB,     KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_CAPS,    KC_Y,       KC_U,       KC_I,       KC_O,       KC_P,       KC_COMM,
-        KC_MINS,    KC_A,       KC_S,       KC_D,       KC_F,       KC_G,       KC_LBRC,    KC_RBRC,            _______,    KC_QUOT,    KC_H,       KC_J,       KC_K,       KC_L,       KC_SCLN,    KC_EQL,
-        KC_DEL,     KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       _______,    _______,            _______,    KC_SLSH,    KC_N,       KC_M,       KC_DOT,     KC_UP,      KC_RGHT,    KC_BSPC,
-        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             MO(_FN),    TD(TD_RSFT),KC_SPC,     KC_ENT,     KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
+        KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_PGUP,
+        KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_F6,      XXXXXXX,            XXXXXXX,    KC_F7,      KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_PGDN,
+        KC_SCLN,    KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_PSCR,    KC_Y,       KC_U,       KC_I,       KC_O,       KC_MINS,    KC_EQL,
+        KC_TAB,     KC_A,       KC_S,       KC_D,       KC_F,       KC_G,       KC_SLSH,    KC_BSLS,            KC_INS,     KC_QUOT,    KC_H,       KC_J,       KC_K,       KC_L,       KC_P,       KC_ENT,
+        KC_DEL,     KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       KC_HOME,    KC_END,             KC_CAPS,    KC_LBRC,    KC_N,       KC_M,       KC_COMM,    KC_DOT,     KC_RBRC,    KC_BSPC,
+        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_LSFT,    KC_SPC,     KC_ENT,             TD(TD_LALT),KC_SPC,     TD(TD_RSFT),TD(TD_RCTL),KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
     ),
 };
 
@@ -98,7 +93,7 @@ typedef enum {
 
 typedef struct {
     mod_td_state_t state;            // Resolved gesture
-    uint16_t       base_kc;          // Bare modifier keycode (Alt or Ctrl)
+    uint16_t       base_kc;          // Base modifier keycode for tap / hold
     uint8_t        combo_mods;       // Modifier mask for the double-hold combo
     bool           suspended_qwerty; // QWERTY was suspended for this hold
 } mod_td_user_data_t;
@@ -115,12 +110,10 @@ static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
 
 // ---------------------------------------------------------------------------
 // QWERTY-layer suspension (reference-counted)
-// When a non-Shift modifier (Ctrl, Alt) or MO1 key is held while _QWERTY is
-// active, temporarily revert to _BASE so shortcut key positions match the
-// ergonomic layout.  Shift is intentionally excluded: it must stay on _QWERTY
-// so the user can type capital letters in the active language.
-// Multiple modifiers held simultaneously are handled correctly because the
-// counter is only decremented to zero when the last modifier is released.
+// When a tap-dance modifier hold or MO(_FN) key is held while _QWERTY is
+// active, temporarily revert to _BASE so shortcuts use the ergonomic layout.
+// Multiple simultaneous holders are handled correctly because the counter is
+// only decremented to zero when the last holder is released.
 // ---------------------------------------------------------------------------
 static uint8_t qwerty_suspend_count = 0;
 
