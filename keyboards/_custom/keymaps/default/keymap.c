@@ -17,10 +17,9 @@ enum layers {
 //   single hold      → hold the base modifier
 //   double-tap+hold  → hold Shift + base modifier
 enum tap_dances {
-    TD_LALT,
-    TD_LCTL,
-    TD_RCTL,
-    TD_RALT,
+    TD_RSFT, // Right Shift + Left Alt
+    TD_LALT, // Left Alt + Left Ctrl
+    TD_RCTL, // Right Ctrl + Right Shift
 };
 
 // TEMP_EN: right-side key on _QWERTY — temporarily switch the OS IME to
@@ -34,7 +33,7 @@ enum combo_events {
     BOTH_SFT,
 };
 
-const uint16_t PROGMEM both_sft_combo[] = {KC_LSFT, KC_RSFT, COMBO_END};
+const uint16_t PROGMEM both_sft_combo[] = {KC_LSFT, TD(TD_RSFT), COMBO_END};
 
 combo_t key_combos[] = {
     [BOTH_SFT] = COMBO_ACTION(both_sft_combo),
@@ -50,12 +49,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     /* _BASE – Ergonomic layout (default) */
     [_BASE] = LAYOUT(
-        KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F12,     KC_PGUP,
-        KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_F10,     XXXXXXX,            XXXXXXX,    KC_F11,     KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_PGDN,
-        KC_COMM,    KC_DOT,     KC_M,       KC_S ,      KC_P,       KC_Q,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_LBRC,    KC_RBRC,    KC_Y,       KC_T,       KC_W,       KC_Q,       KC_COMM,
-        KC_TAB,     KC_L,       KC_R,       KC_R,       KC_R,       KC_D,       KC_SLSH,    KC_BSLS,            KC_INS,     KC_QUOT,    KC_L,       KC_N,       KC_T,       KC_N,       KC_B,       KC_EQL,
-        KC_DEL,     KC_X,       KC_X,       KC_W,       KC_V,       KC_SCLN,    KC_HOME,    KC_END,             KC_BSLS,    KC_SCLN,    KC_B,       KC_L,       KC_Y,       KC_DOT,     KC_J,       KC_BSPC,
-        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             TD(TD_RALT),KC_RSFT,    KC_SPC,     TD(TD_RCTL),KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
+        KC_ESC,     KC_F1,      KC_F2,      KC_F3,      KC_F4,      KC_F5,      XXXXXXX,    XXXXXXX,            XXXXXXX,    XXXXXXX,    KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     KC_PGUP,
+        KC_GRV,     KC_1,       KC_2,       KC_3,       KC_4,       KC_5,       KC_F6,      XXXXXXX,            XXXXXXX,    KC_F7,      KC_6,       KC_7,       KC_8,       KC_9,       KC_0,       KC_PGDN,
+        KC_SCLN,    KC_J,       KC_M,       KC_U,       KC_B,       KC_Q,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_COMM,    KC_DOT,     KC_Y,       KC_T,       KC_C,       KC_Q,       KC_SCLN,
+        KC_TAB,     KC_L,       KC_R,       KC_R,       KC_R,       KC_D,       KC_SLSH,    KC_BSLS,            KC_INS,     KC_QUOT,    KC_L,       KC_I,       KC_T,       KC_I,       KC_P,       KC_EQL,
+        KC_DEL,     KC_W,       KC_W,       KC_C,       KC_F,       KC_X,       KC_HOME,    KC_END,             KC_BSLS,    KC_X,       KC_P,       KC_L,       KC_Y,       KC_J,       KC_RBRC,    KC_BSPC,
+        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             TD(TD_LALT),TD(TD_RSFT),KC_SPC,     TD(TD_RCTL),KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
 
     ),
 
@@ -76,18 +75,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,     KC_Q,       KC_W,       KC_E,       KC_R,       KC_T,       KC_PAUS,    XXXXXXX,            XXXXXXX,    KC_CAPS,    KC_Y,       KC_U,       KC_I,       KC_O,       KC_P,       KC_COMM,
         KC_MINS,    KC_A,       KC_S,       KC_D,       KC_F,       KC_G,       KC_LBRC,    KC_RBRC,            _______,    KC_QUOT,    KC_H,       KC_J,       KC_K,       KC_L,       KC_SCLN,    KC_EQL,
         KC_DEL,     KC_Z,       KC_X,       KC_C,       KC_V,       KC_B,       _______,    _______,            _______,    KC_SLSH,    KC_N,       KC_M,       KC_DOT,     KC_UP,      KC_RGHT,    KC_BSPC,
-        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             MO(_FN),    KC_RSFT,    KC_SPC,     KC_ENT,     KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
+        KC_LALT,    MO(_FN),    KC_APP,     KC_LCMD,    KC_LCTL,    KC_SPC,     KC_LSFT,    KC_ENT,             MO(_FN),    TD(TD_RSFT),KC_SPC,     KC_ENT,     KC_LEFT,    KC_UP,      KC_DOWN,    KC_RGHT,
     ),
 };
 
 // clang-format on
 
 // ---------------------------------------------------------------------------
-// Modifier tap dance (Alt / Ctrl)
+// Modifier tap dance
 //   single tap  → send modifier once
 //   single hold → hold modifier
 //   double tap  → send modifier twice
-//   double hold → hold Shift + modifier
+//   double hold → hold the configured modifier combo
 // ---------------------------------------------------------------------------
 typedef enum {
     MOD_TD_NONE,
@@ -100,14 +99,13 @@ typedef enum {
 typedef struct {
     mod_td_state_t state;            // Resolved gesture
     uint16_t       base_kc;          // Bare modifier keycode (Alt or Ctrl)
-    uint8_t        shift_base_mods;  // Modifier mask for Shift+base
+    uint8_t        combo_mods;       // Modifier mask for the double-hold combo
     bool           suspended_qwerty; // QWERTY was suspended for this hold
 } mod_td_user_data_t;
 
-static mod_td_user_data_t lctl_td_data = {MOD_TD_NONE, KC_LCTL, MOD_BIT(KC_LSFT) | MOD_BIT(KC_LCTL), false};
 static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), false};
-static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LSFT) | MOD_BIT(KC_LALT), false};
-static mod_td_user_data_t ralt_td_data = {MOD_TD_NONE, KC_RALT, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RALT), false};
+static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false};
+static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL), false};
 
 static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
     if (state->count == 1) return state->pressed ? MOD_TD_SINGLE_HOLD : MOD_TD_SINGLE_TAP;
@@ -171,7 +169,7 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
             tap_code(td->base_kc);
             break;
         case MOD_TD_DOUBLE_HOLD:
-            register_mods(td->shift_base_mods);
+            register_mods(td->combo_mods);
             break;
         default:
             break;
@@ -187,7 +185,7 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
             unregister_code(td->base_kc);
             break;
         case MOD_TD_DOUBLE_HOLD:
-            unregister_mods(td->shift_base_mods);
+            unregister_mods(td->combo_mods);
             break;
         default:
             break;
@@ -198,10 +196,9 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
 }
 
 tap_dance_action_t tap_dance_actions[] = {
+    [TD_RSFT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rsft_td_data},
     [TD_LALT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lalt_td_data},
-    [TD_LCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lctl_td_data},
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
-    [TD_RALT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &ralt_td_data},
 };
 
 // Toggle _BASE <-> _QWERTY when both Shift keys are held simultaneously.
