@@ -46,6 +46,14 @@ All hold gestures also trigger QWERTY suspension (see above).
 ### TEMP_EN (temporary English IME)
 Available as the innermost key on the right half of row 5 (the Z/N row, second-to-last row) in `_QWERTY`. On press it sends **Win+Space** to ask the OS to switch the IME to English, then suspends `_QWERTY` so `_BASE` (ergonomic English layout) is active for the duration of the hold. On release it restores `_QWERTY` and sends **Win+Space** again to revert the IME. Shift is intentionally *not* suspended by this key so that capitalised characters still work correctly for the active language.
 
+### Arrow string macros
+Two keys on the `_FN` layer send multi-character arrow strings:
+
+| Key | Output |
+|-----|--------|
+| `FN` + `I` | `=>` (fat arrow) |
+| `FN` + `N` | `->` (thin arrow) |
+
 ## Bootloader
 
 Enter the bootloader in 3 ways:
