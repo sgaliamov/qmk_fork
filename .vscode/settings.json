@@ -36,6 +36,16 @@
         "editor.formatOnSave": false
     },
     "clangd.arguments": ["--header-insertion=never"],
+    "terminal.integrated.profiles.windows": {
+        "qmk": {
+            "path": "C:/QMK_MSYS/usr/bin/bash.exe",
+            "env": {
+                "MSYSTEM": "MINGW64",
+                "CHERE_INVOKING": "1"
+            },
+            "args": ["--login"]
+        }
+    },
     "json.schemas": [
         {
             "fileMatch": ["qmk.json"],
