@@ -228,7 +228,13 @@ void keyboard_post_init_user(void) {
 // Sends Win+Space to ask the OS to switch the IME to English, then suspends
 // _QWERTY so _BASE (ergonomic English layout) is accessible for the hold
 // duration.  Sends Win+Space again on release to restore the original IME.
-// Shift is NOT suspended by either key: Shift+letter must produce the
+//
+// Left Ctrl / Left Alt — when held while _QWERTY is active, they also suspend
+// _QWERTY so Ctrl/Alt shortcuts resolve to the ergonomic _BASE key positions.
+// This keeps shortcuts identical across layers (e.g. while typing Russian on
+// _QWERTY, Ctrl+C stays on the same physical key as on _BASE).
+//
+// Shift is NOT suspended by these keys: Shift+letter must produce the
 // capitalised character of the active language.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // Tracks how many MO(_FN) physical keys are currently held.
@@ -237,6 +243,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static bool mo_fn_suspended = false;
     // True while _QWERTY is suspended due to a TEMP_EN hold.
     static bool temp_en_suspended = false;
+    // True while _QWERTY is suspended due to a Left Ctrl / Left Alt hold.
+    static bool lctl_suspended = false;
+    static bool lalt_suspended = false;
 
     switch (keycode) {
         case MO(_FN):
@@ -268,6 +277,28 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 tap_code16(LGUI(KC_SPC));
             }
             return false;
+
+        case KC_LCTL:
+            // Holding Left Ctrl reveals _BASE while _QWERTY is active so that
+            // Ctrl shortcuts use the ergonomic key positions.
+            if (record->event.pressed) {
+                lctl_suspended = suspend_qwerty();
+            } else {
+                resume_qwerty(lctl_suspended);
+                lctl_suspended = false;
+            }
+            return true; // let QMK register/unregister the modifier itself
+
+        case KC_LALT:
+            // Holding Left Alt reveals _BASE while _QWERTY is active so that
+            // Alt shortcuts use the ergonomic key positions.
+            if (record->event.pressed) {
+                lalt_suspended = suspend_qwerty();
+            } else {
+                resume_qwerty(lalt_suspended);
+                lalt_suspended = false;
+            }
+            return true; // let QMK register/unregister the modifier itself
 
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");
