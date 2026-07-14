@@ -55,8 +55,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      KC_PGUP,
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_PGDN,
         KC_BSLS,     KC_SCLN,     KC_U,        KC_S,        KC_P,        KC_K,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_W,        KC_H,        KC_T,        KC_C,        KC_MINS,     KC_EQL,
-        KC_TAB,      KC_L,        KC_E,        KC_R,        KC_A,        KC_D,        KC_SLSH,     KC_HOME,             KC_PSCR,     QUOT_SWAP,   KC_F,        KC_I,        KC_N,        KC_O,        KC_G,        KC_ENT,
-        KC_DEL,      KC_X,        KC_Q,        KC_V,        KC_Y,        KC_COMM,     KC_LBRC,     KC_END,              TD(TD_LALT), KC_RBRC,     KC_DOT,      KC_M,        KC_B,        KC_Z,        KC_J,        KC_BSPC,
+        KC_TAB,      KC_L,        KC_E,        KC_R,        KC_A,        KC_Y,        KC_SLSH,     KC_HOME,             KC_PSCR,     QUOT_SWAP,   KC_M,        KC_I,        KC_N,        KC_O,        KC_G,        KC_ENT,
+        KC_DEL,      KC_X,        KC_Q,        KC_V,        KC_D,        KC_COMM,     KC_LBRC,     KC_END,              TD(TD_LALT), KC_RBRC,     KC_DOT,      KC_F,        KC_B,        KC_Z,        KC_J,        KC_BSPC,
         KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_ENT,              KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_UP,       KC_DOWN,     KC_RGHT
     ),
 
