@@ -54,6 +54,9 @@ Two keys on the `_FN` layer send multi-character arrow strings:
 | `FN` + `I` | `=>` (fat arrow) |
 | `FN` + `N` | `->` (thin arrow) |
 
+### Tap-dance toggle
+The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, the modifier keys act like plain held/tapped modifiers instead of the custom combo gestures.
+
 ## Bootloader
 
 Enter the bootloader in 3 ways:
