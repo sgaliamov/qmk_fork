@@ -21,8 +21,8 @@ See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_to
 | # | Name | Description |
 |---|------|-------------|
 | 0 | `_BASE` | Ergonomic default layout |
-| 1 | `_FN` | Function / numpad / media layer (accessed via `MO(_FN)`) |
-| 2 | `_QWERTY` | Standard QWERTY layout |
+| 1 | `_QWERTY` | Standard QWERTY layout |
+| 2 | `_FN` | Function / numpad / media layer (accessed via `MO(_FN)`) |
 
 ## Behavior
 

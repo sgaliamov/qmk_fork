@@ -19,6 +19,7 @@ enum layers {
 //   tap / hold       → send or hold the base modifier
 //   double-tap+hold  → hold the configured modifier combo
 enum tap_dances {
+    TD_LSFT, // base: LSFT, double-hold combo: LALT + LSFT
     TD_RSFT, // base: RSFT, double-hold combo: LALT + RSFT
     TD_LALT, // base: LALT, double-hold combo: LALT + RCTL
     TD_RCTL, // base: RCTL, double-hold combo: RSFT + RCTL
@@ -38,13 +39,16 @@ enum custom_keycodes {
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
 enum combo_events {
-    BOTH_SFT,
+    BOTH_SFT_TD,
+    BOTH_SFT_PLAIN,
 };
 
-const uint16_t PROGMEM both_sft_combo[] = {KC_LSFT, TD(TD_RSFT), COMBO_END};
+const uint16_t PROGMEM both_sft_td_combo[]    = {TD(TD_LSFT), TD(TD_RSFT), COMBO_END};
+const uint16_t PROGMEM both_sft_plain_combo[] = {KC_LSFT, KC_RSFT, COMBO_END};
 
 combo_t key_combos[] = {
-    [BOTH_SFT] = COMBO_ACTION(both_sft_combo),
+    [BOTH_SFT_TD]    = COMBO_ACTION(both_sft_td_combo),
+    [BOTH_SFT_PLAIN] = COMBO_ACTION(both_sft_plain_combo),
 };
 
 // Require hold (not tap) so quick Shift presses aren't delayed.
@@ -60,7 +64,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      KC_J,        KC_G,        KC_U,        KC_W,        KC_DOT,      KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_B,        KC_M,        KC_O,        KC_F,        KC_COMM,     LBRC_SWAP,
         KC_ENT,      KC_H,        KC_R,        KC_E,        KC_T,        KC_L,        KC_SLSH,     KC_HOME,             KC_PGUP,     QUOT_SWAP,   KC_D,        KC_I,        KC_A,        KC_N,        KC_S,        KC_ENT,
         KC_DEL,      KC_K,        KC_V,        KC_Z,        KC_C,        KC_Y,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_X,        KC_P,        KC_Q,        KC_SCLN,     KC_UP,       KC_BSPC,
-        KC_BSLS,     TD(TD_LALT), KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_RSFT), MO(_FN),             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TD(TD_LALT), KC_DOWN
+        KC_BSLS,     TD(TD_LALT), KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_LSFT), MO(_FN),             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TD(TD_LALT), KC_DOWN
     ),
 
     [_QWERTY] = LAYOUT(
@@ -78,7 +82,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PDOT,     KC_NUM,      XXXXXXX,             XXXXXXX,     KC_MPLY,     KC_VOLU,     KC_MPRV,     KC_MNXT,     XXXXXXX,     KC_PCMM ,    KC_LBRC,
         KC_PEQL,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_PAST,     KC_PSLS,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_VOLD,     ARROW_FAT,   ARROW_THIN,  XXXXXXX,     KC_SCLN,     KC_PENT,
         KC_DEL,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TD_TOGGLE,   KC_PMNS,     KC_END,              KC_PGDN,     KC_PPLS,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_UP,       KC_BSPC,
-        KC_BSLS,     TD(TD_LALT), KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_RSFT), MO(_FN),             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TD(TD_LALT), KC_DOWN
+        KC_BSLS,     TD(TD_LALT), KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_LSFT), MO(_FN),             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TD(TD_LALT), KC_DOWN
     )
 };
 
@@ -103,12 +107,15 @@ typedef struct {
     mod_td_state_t state;            // Resolved gesture
     uint16_t       base_kc;          // Base modifier keycode for tap / hold
     uint8_t        combo_mods;       // Modifier mask for the double-hold combo
+    bool           suspend_qwerty;   // Hold should reveal _BASE while _QWERTY is active
     bool           suspended_qwerty; // QWERTY was suspended for this hold
+    bool           plain_hold;       // Key is currently held as a plain modifier (tap dance bypassed)
 } mod_td_user_data_t;
 
-static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), false};
-static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false};
-static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL), false};
+static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), true, false, false};
+static mod_td_user_data_t lsft_td_data = {MOD_TD_NONE, KC_LSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT), false, false, false};
+static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false, false, false};
+static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL), true, false, false};
 
 static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
     if (state->count == 1) return state->pressed ? MOD_TD_SINGLE_HOLD : MOD_TD_SINGLE_TAP;
@@ -179,7 +186,7 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
         return;
     }
 
-    if (td->state == MOD_TD_SINGLE_HOLD || td->state == MOD_TD_DOUBLE_HOLD) {
+    if (td->suspend_qwerty && (td->state == MOD_TD_SINGLE_HOLD || td->state == MOD_TD_DOUBLE_HOLD)) {
         td->suspended_qwerty = suspend_qwerty();
     }
     switch (td->state) {
@@ -221,15 +228,17 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
 }
 
 tap_dance_action_t tap_dance_actions[] = {
+    [TD_LSFT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lsft_td_data},
     [TD_RSFT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rsft_td_data},
     [TD_LALT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lalt_td_data},
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
 };
 
 // Toggle _BASE <-> _QWERTY when both Shift keys are held simultaneously.
-// Also sends Win+Space to switch the OS input method (e.g. IME toggle).
+// Accept either the tap-dance pair used on _BASE/_FN or the plain Shift pair on
+// _QWERTY, then send Win+Space to switch the OS input method (e.g. IME toggle).
 void process_combo_event(uint16_t combo_index, bool pressed) {
-    if (combo_index == BOTH_SFT && pressed) {
+    if ((combo_index == BOTH_SFT_TD || combo_index == BOTH_SFT_PLAIN) && pressed) {
         bool qwerty_active   = IS_LAYER_ON(_QWERTY) || qwerty_suspend_count > 0;
         qwerty_suspend_count = 0;
         layer_move(qwerty_active ? _BASE : _QWERTY);
@@ -267,6 +276,12 @@ void keyboard_post_init_user(void) {
 //
 // Shift is NOT suspended by these keys: Shift+letter must produce the
 // capitalised character of the active language.
+//
+// Tap-dance modifiers — while _QWERTY is logically active (directly on, or
+// temporarily suspended by a Ctrl/Alt hold, or shadowed by a held _FN), tap
+// dance is unwanted: the TD keys reachable through _FN or the revealed _BASE
+// act as instant plain modifiers instead.  Ctrl/Alt still reveal _BASE for
+// the duration of the hold; tap dance stays fully functional on _BASE itself.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // True while _QWERTY is suspended due to a TEMP_EN hold.
     static bool temp_en_suspended = false;
@@ -309,6 +324,37 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 lalt_suspended = false;
             }
             return true; // let QMK register/unregister the modifier itself
+
+        case TD(TD_LSFT):
+        case TD(TD_RSFT):
+        case TD(TD_LALT):
+        case TD(TD_RCTL): {
+            // While _QWERTY is logically active, bypass tap dance entirely:
+            // act as an instant plain modifier.  Ctrl/Alt additionally reveal
+            // _BASE for the hold, mirroring the plain KC_LCTL/KC_LALT keys.
+            mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
+            if (record->event.pressed) {
+                if (IS_LAYER_ON(_QWERTY) || qwerty_suspend_count > 0) {
+                    if (!td->plain_hold) {
+                        td->plain_hold = true;
+                        if (td->suspend_qwerty) {
+                            td->suspended_qwerty = suspend_qwerty();
+                        }
+                        register_code(td->base_kc);
+                    }
+                    return false;
+                }
+            } else if (td->plain_hold) {
+                unregister_code(td->base_kc);
+                if (td->suspend_qwerty) {
+                    resume_qwerty(td->suspended_qwerty);
+                    td->suspended_qwerty = false;
+                }
+                td->plain_hold = false;
+                return false;
+            }
+            return true; // normal tap-dance handling on _BASE
+        }
 
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");
