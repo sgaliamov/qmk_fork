@@ -27,24 +27,39 @@ See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_to
 ## Behavior
 
 ### Dual-layout hot-switching
-Hold both Shift keys simultaneously (`KC_LSFT` + `TD_RSFT`) to toggle between `_BASE` (ergonomic) and `_QWERTY`. Each toggle also sends **Win+Space** to switch the OS IME in sync with the active layout. A layer-indicator LED (GP17) turns on while `_QWERTY` is active.
+Hold both Shift keys simultaneously to toggle between `_BASE` (ergonomic) and `_QWERTY`. The combo works with either:
+
+- the tap-dance Shift pair on `_BASE` / `_FN` (`TD_LSFT` + `TD_RSFT`)
+- the plain Shift pair on `_QWERTY` (`KC_LSFT` + `KC_RSFT`)
+
+Each toggle also sends **Win+Space** to switch the OS IME in sync with the selected layout. A layer-indicator LED (GP17) turns on while `_QWERTY` is active.
 
 ### QWERTY suspension
-While `_QWERTY` is active, holding `MO(_FN)` or any tap-dance modifier **temporarily suspends** `_QWERTY` (reverts to `_BASE`) so that shortcuts and function keys resolve to ergonomic key positions. The layer is restored automatically when all holding keys are released. Multiple simultaneous holders are tracked with a reference counter so the last one to release triggers the restore.
+While `_QWERTY` is selected, only the following keys temporarily reveal `_BASE` for the duration of the hold:
+
+- `KC_LCTL`
+- `KC_LALT`
+- `TEMP_EN`
+- the tap-dance Ctrl / Alt keys when they are reached through `_FN` or the revealed `_BASE`
+
+This keeps Ctrl/Alt shortcuts on the same physical keys as `_BASE` while typing on `_QWERTY`.
+
+`MO(_FN)` does **not** suspend `_QWERTY` by itself, and Shift keys never reveal `_BASE`.
 
 ### Tap-dance modifiers
-Three modifier keys on the right-hand side use tap-dance for extended gestures:
+Four modifier keys use tap-dance for extended gestures when `_BASE` is the selected layout:
 
 | Key | Single tap | Single hold | Double tap | Double hold |
 |-----|-----------|-------------|------------|-------------|
+| `TD_LSFT` | Send `LSFT` | Hold `LSFT` | Send `LSFT` twice | Hold `LALT`+`LSFT` |
 | `TD_RSFT` | Send `RSFT` | Hold `RSFT` | Send `RSFT` twice | Hold `LALT`+`RSFT` |
 | `TD_LALT` | Send `LALT` | Hold `LALT` | Send `LALT` twice | Hold `LALT`+`RCTL` |
 | `TD_RCTL` | Send `RCTL` | Hold `RCTL` | Send `RCTL` twice | Hold `RSFT`+`RCTL` |
 
-All hold gestures also trigger QWERTY suspension (see above).
+When `_QWERTY` is selected, tap dance is bypassed for these keys: they behave as immediate plain modifiers instead. The Ctrl / Alt variants still temporarily reveal `_BASE` for shortcuts; the Shift variants remain plain Shift.
 
 ### TEMP_EN (temporary English IME)
-Available as the innermost key on the right half of row 5 (the Z/N row, second-to-last row) in `_QWERTY`. On press it sends **Win+Space** to ask the OS to switch the IME to English, then suspends `_QWERTY` so `_BASE` (ergonomic English layout) is active for the duration of the hold. On release it restores `_QWERTY` and sends **Win+Space** again to revert the IME. Shift is intentionally *not* suspended by this key so that capitalised characters still work correctly for the active language.
+Available as the innermost key on the right half of row 5 (the Z/N row, second-to-last row) in `_QWERTY`. On press it sends **Win+Space** to ask the OS to switch the IME to English, then reveals `_BASE` (ergonomic English layout) for the duration of the hold. On release it restores `_QWERTY` and sends **Win+Space** again to revert the IME.
 
 ### Arrow string macros
 Two keys on the `_FN` layer send multi-character arrow strings:
@@ -55,7 +70,7 @@ Two keys on the `_FN` layer send multi-character arrow strings:
 | `FN` + `N` | `->` (thin arrow) |
 
 ### Tap-dance toggle
-The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, the modifier keys act like plain held/tapped modifiers instead of the custom combo gestures.
+The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, the modifier keys on `_BASE` act like plain held/tapped modifiers instead of the custom combo gestures. On `_QWERTY`, these keys are already forced to behave as plain modifiers.
 
 ## Bootloader
 

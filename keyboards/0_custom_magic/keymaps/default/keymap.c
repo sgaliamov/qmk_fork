@@ -104,18 +104,16 @@ typedef enum {
 } mod_td_state_t;
 
 typedef struct {
-    mod_td_state_t state;            // Resolved gesture
-    uint16_t       base_kc;          // Base modifier keycode for tap / hold
-    uint8_t        combo_mods;       // Modifier mask for the double-hold combo
-    bool           suspend_qwerty;   // Hold should reveal _BASE while _QWERTY is active
-    bool           suspended_qwerty; // QWERTY was suspended for this hold
-    bool           plain_hold;       // Key is currently held as a plain modifier (tap dance bypassed)
+    mod_td_state_t state;      // Resolved gesture
+    uint16_t       base_kc;    // Base modifier keycode for tap / hold
+    uint8_t        combo_mods; // Modifier mask for the double-hold combo
+    bool           reveals;    // When bypassed on QWERTY, the plain hold also reveals _BASE
 } mod_td_user_data_t;
 
-static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), true, false, false};
-static mod_td_user_data_t lsft_td_data = {MOD_TD_NONE, KC_LSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT), false, false, false};
-static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false, false, false};
-static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL), true, false, false};
+static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), true};
+static mod_td_user_data_t lsft_td_data = {MOD_TD_NONE, KC_LSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT), false};
+static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false};
+static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL), true};
 
 static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
     if (state->count == 1) return state->pressed ? MOD_TD_SINGLE_HOLD : MOD_TD_SINGLE_TAP;
@@ -124,41 +122,83 @@ static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
 }
 
 // ---------------------------------------------------------------------------
-// QWERTY-layer suspension (reference-counted)
-// When a tap-dance modifier hold or a plain Ctrl/Alt key is held while _QWERTY
-// is active, temporarily revert to _BASE so shortcuts use the ergonomic layout.
-// Multiple simultaneous holders are handled correctly because the counter is
-// only decremented to zero when the last holder is released.
+// QWERTY layer management (derived state, position-tracked holds)
+//
+// qwerty_selected is the single source of truth for which base layout the
+// user has chosen; it is toggled only by the both-Shift combo.  Keys whose
+// hold temporarily reveals _BASE (Ctrl/Alt, TEMP_EN) are tracked in a small
+// table keyed by MATRIX POSITION, so a release always matches its press even
+// if the layer (and thus the resolved keycode) changed mid-hold.  The actual
+// layer is always recomputed from this state, never patched incrementally,
+// which makes the system self-healing.
 // ---------------------------------------------------------------------------
-static uint8_t qwerty_suspend_count = 0;
+static bool qwerty_selected = false;
 
-// Turn off _QWERTY and increment the suspend counter.
-// Returns true if suspension happened (caller stores this to pass resume_qwerty).
-static bool suspend_qwerty(void) {
-    if (IS_LAYER_ON(_QWERTY) || qwerty_suspend_count > 0) {
-        if (qwerty_suspend_count == 0) {
-            layer_off(_QWERTY);
+typedef struct {
+    keypos_t key;        // Matrix position of the held key
+    uint16_t unreg_kc;   // Keycode we registered ourselves (KC_NO if QMK core handles it)
+    bool     reveals;    // Hold reveals _BASE while _QWERTY is selected
+    bool     ime_toggle; // Send Win+Space again on release (TEMP_EN)
+    bool     consume;    // Press was consumed, so consume the release too
+    bool     active;
+} qwerty_hold_t;
+
+#define MAX_QWERTY_HOLDS 8
+static qwerty_hold_t qwerty_holds[MAX_QWERTY_HOLDS];
+
+static qwerty_hold_t *find_qwerty_hold(keypos_t key) {
+    for (uint8_t i = 0; i < MAX_QWERTY_HOLDS; i++) {
+        if (qwerty_holds[i].active && qwerty_holds[i].key.row == key.row && qwerty_holds[i].key.col == key.col) {
+            return &qwerty_holds[i];
         }
-        qwerty_suspend_count++;
-        return true;
     }
-    return false;
+    return NULL;
 }
 
-// Decrement the suspend counter; restore _QWERTY only when the last holder releases.
-// was_suspended must be the value returned by the matching suspend_qwerty() call.
-static void resume_qwerty(bool was_suspended) {
-    if (was_suspended && qwerty_suspend_count > 0) {
-        qwerty_suspend_count--;
-        if (qwerty_suspend_count == 0) {
-            layer_on(_QWERTY);
+// Recompute the layer from the current state: _QWERTY is on iff it is the
+// selected layout and no revealing key is held.
+static void apply_qwerty_layer(void) {
+    bool reveal = false;
+    for (uint8_t i = 0; i < MAX_QWERTY_HOLDS; i++) {
+        if (qwerty_holds[i].active && qwerty_holds[i].reveals) {
+            reveal = true;
+            break;
         }
     }
+    bool want_qwerty = qwerty_selected && !reveal;
+    if (want_qwerty != IS_LAYER_ON(_QWERTY)) {
+        if (want_qwerty) {
+            layer_on(_QWERTY);
+        } else {
+            layer_off(_QWERTY);
+        }
+    }
+}
+
+static void add_qwerty_hold(keypos_t key, uint16_t unreg_kc, bool reveals, bool ime_toggle, bool consume) {
+    qwerty_hold_t *slot = find_qwerty_hold(key); // reuse a stale slot for the same position
+    if (!slot) {
+        for (uint8_t i = 0; i < MAX_QWERTY_HOLDS; i++) {
+            if (!qwerty_holds[i].active) {
+                slot = &qwerty_holds[i];
+                break;
+            }
+        }
+    }
+    if (!slot) return;
+    slot->key        = key;
+    slot->unreg_kc   = unreg_kc;
+    slot->reveals    = reveals;
+    slot->ime_toggle = ime_toggle;
+    slot->consume    = consume;
+    slot->active     = true;
+    apply_qwerty_layer();
 }
 
 // Called when the tap-dance term expires or a non-TD key is pressed.
 // Resolves the gesture and either taps or holds the modifier.
-// On hold gestures, suspends _QWERTY so shortcuts use _BASE key positions.
+// Layer handling lives entirely in process_record_user / apply_qwerty_layer;
+// these callbacks only manage modifier registration.
 static bool tap_dance_enabled = true;
 
 void mod_td_finished(tap_dance_state_t *state, void *user_data) {
@@ -186,9 +226,6 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
         return;
     }
 
-    if (td->suspend_qwerty && (td->state == MOD_TD_SINGLE_HOLD || td->state == MOD_TD_DOUBLE_HOLD)) {
-        td->suspended_qwerty = suspend_qwerty();
-    }
     switch (td->state) {
         case MOD_TD_SINGLE_TAP:
             tap_code(td->base_kc);
@@ -209,7 +246,7 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
 }
 
 // Called when the tap-dance key is released (after mod_td_finished).
-// Unregisters held modifiers and restores _QWERTY if it was suspended.
+// Unregisters held modifiers.
 void mod_td_reset(tap_dance_state_t *state, void *user_data) {
     mod_td_user_data_t *td = (mod_td_user_data_t *)user_data;
     switch (td->state) {
@@ -222,9 +259,7 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
         default:
             break;
     }
-    resume_qwerty(td->suspended_qwerty);
-    td->suspended_qwerty = false;
-    td->state            = MOD_TD_NONE;
+    td->state = MOD_TD_NONE;
 }
 
 tap_dance_action_t tap_dance_actions[] = {
@@ -234,14 +269,13 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
 };
 
-// Toggle _BASE <-> _QWERTY when both Shift keys are held simultaneously.
-// Accept either the tap-dance pair used on _BASE/_FN or the plain Shift pair on
-// _QWERTY, then send Win+Space to switch the OS input method (e.g. IME toggle).
+// Toggle the selected layout (_BASE <-> _QWERTY) when both Shift keys are held
+// simultaneously — either the tap-dance pair on _BASE/_FN or the plain pair on
+// _QWERTY.  Also sends Win+Space to switch the OS input method (e.g. IME).
 void process_combo_event(uint16_t combo_index, bool pressed) {
     if ((combo_index == BOTH_SFT_TD || combo_index == BOTH_SFT_PLAIN) && pressed) {
-        bool qwerty_active   = IS_LAYER_ON(_QWERTY) || qwerty_suspend_count > 0;
-        qwerty_suspend_count = 0;
-        layer_move(qwerty_active ? _BASE : _QWERTY);
+        qwerty_selected = !qwerty_selected;
+        apply_qwerty_layer();
         tap_code16(LGUI(KC_SPC));
     }
 }
@@ -264,97 +298,75 @@ void keyboard_post_init_user(void) {
 // thumb key) are pinned in the _FN layout so Fn shortcuts are identical on both
 // base layers.
 //
-// TEMP_EN — right key on _QWERTY only.
-// Sends Win+Space to ask the OS to switch the IME to English, then suspends
-// _QWERTY so _BASE (ergonomic English layout) is accessible for the hold
-// duration.  Sends Win+Space again on release to restore the original IME.
+// TEMP_EN — sends Win+Space to ask the OS to switch the IME to English, then
+// reveals _BASE (ergonomic English layout) for the hold duration.  Sends
+// Win+Space again on release to restore the original IME.
 //
-// Left Ctrl / Left Alt — when held while _QWERTY is active, they also suspend
-// _QWERTY so Ctrl/Alt shortcuts resolve to the ergonomic _BASE key positions.
-// This keeps shortcuts identical across layers (e.g. while typing Russian on
+// Left Ctrl / Left Alt — when held while _QWERTY is selected, they reveal
+// _BASE so Ctrl/Alt shortcuts resolve to the ergonomic key positions.  This
+// keeps shortcuts identical across layouts (e.g. while typing Russian on
 // _QWERTY, Ctrl+C stays on the same physical key as on _BASE).
 //
-// Shift is NOT suspended by these keys: Shift+letter must produce the
-// capitalised character of the active language.
+// Shift never reveals _BASE: Shift+letter must produce the capitalised
+// character of the active language.
 //
-// Tap-dance modifiers — while _QWERTY is logically active (directly on, or
-// temporarily suspended by a Ctrl/Alt hold, or shadowed by a held _FN), tap
-// dance is unwanted: the TD keys reachable through _FN or the revealed _BASE
-// act as instant plain modifiers instead.  Ctrl/Alt still reveal _BASE for
-// the duration of the hold; tap dance stays fully functional on _BASE itself.
+// Tap-dance modifiers — while _QWERTY is the selected layout, tap dance is
+// bypassed entirely: the TD keys reachable through _FN or the revealed _BASE
+// act as instant plain modifiers (Ctrl/Alt ones also reveal _BASE).  Tap
+// dance stays fully functional when _BASE is the selected layout.
+//
+// All holds are tracked by matrix position (see qwerty_holds), so a release
+// is always paired with its press even when the layer — and therefore the
+// resolved keycode — changed between the two events.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    // True while _QWERTY is suspended due to a TEMP_EN hold.
-    static bool temp_en_suspended = false;
-    // True while _QWERTY is suspended due to a Left Ctrl / Left Alt hold.
-    static bool lctl_suspended = false;
-    static bool lalt_suspended = false;
+    if (!record->event.pressed) {
+        qwerty_hold_t *hold = find_qwerty_hold(record->event.key);
+        if (hold) {
+            bool consume = hold->consume;
+            if (hold->unreg_kc != KC_NO) {
+                unregister_code(hold->unreg_kc);
+            }
+            bool ime_toggle = hold->ime_toggle;
+            hold->active    = false;
+            apply_qwerty_layer();
+            if (ime_toggle) {
+                tap_code16(LGUI(KC_SPC)); // switch the OS IME back
+            }
+            return !consume;
+        }
+    }
 
     switch (keycode) {
         case TEMP_EN:
             if (record->event.pressed) {
                 // Switch OS IME to English, then reveal _BASE for typing.
                 tap_code16(LGUI(KC_SPC));
-                temp_en_suspended = suspend_qwerty();
-            } else {
-                // Restore _QWERTY, then switch the OS IME back.
-                resume_qwerty(temp_en_suspended);
-                temp_en_suspended = false;
-                tap_code16(LGUI(KC_SPC));
+                add_qwerty_hold(record->event.key, KC_NO, true, true, true);
             }
             return false;
 
         case KC_LCTL:
-            // Holding Left Ctrl reveals _BASE while _QWERTY is active so that
-            // Ctrl shortcuts use the ergonomic key positions.
-            if (record->event.pressed) {
-                lctl_suspended = suspend_qwerty();
-            } else {
-                resume_qwerty(lctl_suspended);
-                lctl_suspended = false;
-            }
-            return true; // let QMK register/unregister the modifier itself
-
         case KC_LALT:
-            // Holding Left Alt reveals _BASE while _QWERTY is active so that
-            // Alt shortcuts use the ergonomic key positions.
+            // Holding Ctrl/Alt reveals _BASE while _QWERTY is selected so
+            // shortcuts use the ergonomic key positions.
             if (record->event.pressed) {
-                lalt_suspended = suspend_qwerty();
-            } else {
-                resume_qwerty(lalt_suspended);
-                lalt_suspended = false;
+                add_qwerty_hold(record->event.key, KC_NO, true, false, false);
             }
             return true; // let QMK register/unregister the modifier itself
 
         case TD(TD_LSFT):
         case TD(TD_RSFT):
         case TD(TD_LALT):
-        case TD(TD_RCTL): {
-            // While _QWERTY is logically active, bypass tap dance entirely:
-            // act as an instant plain modifier.  Ctrl/Alt additionally reveal
-            // _BASE for the hold, mirroring the plain KC_LCTL/KC_LALT keys.
-            mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
-            if (record->event.pressed) {
-                if (IS_LAYER_ON(_QWERTY) || qwerty_suspend_count > 0) {
-                    if (!td->plain_hold) {
-                        td->plain_hold = true;
-                        if (td->suspend_qwerty) {
-                            td->suspended_qwerty = suspend_qwerty();
-                        }
-                        register_code(td->base_kc);
-                    }
-                    return false;
-                }
-            } else if (td->plain_hold) {
-                unregister_code(td->base_kc);
-                if (td->suspend_qwerty) {
-                    resume_qwerty(td->suspended_qwerty);
-                    td->suspended_qwerty = false;
-                }
-                td->plain_hold = false;
+        case TD(TD_RCTL):
+            // QWERTY selected: no tap dance — act as an instant plain
+            // modifier; Ctrl/Alt additionally reveal _BASE for the hold.
+            if (record->event.pressed && qwerty_selected) {
+                mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
+                register_code(td->base_kc);
+                add_qwerty_hold(record->event.key, td->base_kc, td->reveals, false, true);
                 return false;
             }
-            return true; // normal tap-dance handling on _BASE
-        }
+            return true; // _BASE selected: normal tap-dance handling
 
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");
