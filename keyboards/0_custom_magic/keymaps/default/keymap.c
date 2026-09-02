@@ -31,6 +31,8 @@ enum custom_keycodes {
     ARROW_FAT,  // =>
     ARROW_THIN, // ->
     QUOT_SWAP,  // _BASE: " when unshifted, ' when shifted
+    LBRC_SWAP,  // _BASE: { when unshifted, [ when shifted
+    RBRC_SWAP,  // _BASE: } when unshifted, ] when shifted
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -53,8 +55,8 @@ bool get_combo_must_hold(uint16_t combo_index, combo_t *combo) {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT(
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      KC_PSCR,
-        KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
-        KC_TAB,      KC_J,        KC_G,        KC_U,        KC_W,        KC_DOT,      KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_B,        KC_M,        KC_O,        KC_F,        KC_COMM,     KC_LBRC,
+        KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        RBRC_SWAP,
+        KC_TAB,      KC_J,        KC_G,        KC_U,        KC_W,        KC_DOT,      KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_B,        KC_M,        KC_O,        KC_F,        KC_COMM,     LBRC_SWAP,
         KC_ENT,      KC_H,        KC_R,        KC_E,        KC_T,        KC_L,        KC_SLSH,     KC_HOME,             KC_PGUP,     QUOT_SWAP,   KC_D,        KC_I,        KC_A,        KC_N,        KC_S,        KC_ENT,
         KC_DEL,      KC_K,        KC_V,        KC_Z,        KC_C,        KC_Y,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_X,        KC_P,        KC_Q,        KC_SCLN,     KC_UP,       KC_BSPC,
         KC_BSLS,     TD(TD_LALT), KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_RSFT), MO(_FN),             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TD(TD_LALT), KC_DOWN
@@ -302,6 +304,36 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     register_mods(shift);
                 } else {
                     tap_code16(S(KC_QUOT));
+                }
+            }
+            return false;
+
+        case LBRC_SWAP:
+            // _BASE: swap the shifted/unshifted output of the left bracket key so
+            // an unshifted tap produces { and a shifted tap produces [.
+            if (record->event.pressed) {
+                uint8_t shift = get_mods() & MOD_MASK_SHIFT;
+                if (shift) {
+                    unregister_mods(shift);
+                    tap_code(KC_LBRC);
+                    register_mods(shift);
+                } else {
+                    tap_code16(S(KC_LBRC));
+                }
+            }
+            return false;
+
+        case RBRC_SWAP:
+            // _BASE: swap the shifted/unshifted output of the right bracket key so
+            // an unshifted tap produces } and a shifted tap produces ].
+            if (record->event.pressed) {
+                uint8_t shift = get_mods() & MOD_MASK_SHIFT;
+                if (shift) {
+                    unregister_mods(shift);
+                    tap_code(KC_RBRC);
+                    register_mods(shift);
+                } else {
+                    tap_code16(S(KC_RBRC));
                 }
             }
             return false;
