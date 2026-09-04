@@ -66,8 +66,8 @@ Two keys on the `_FN` layer send multi-character arrow strings:
 
 | Key | Output |
 |-----|--------|
-| `FN` + `I` | `=>` (fat arrow) |
-| `FN` + `N` | `->` (thin arrow) |
+| `FN` + `X` | `=>` (fat arrow) |
+| `FN` + `D` | `->` (thin arrow) |
 
 ### Tap-dance toggle
 The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, the modifier keys on `_BASE` act like plain held/tapped modifiers instead of the custom combo gestures. On `_QWERTY`, these keys are already forced to behave as plain modifiers.

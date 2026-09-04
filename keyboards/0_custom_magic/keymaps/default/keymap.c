@@ -175,6 +175,11 @@ static void apply_qwerty_layer(void) {
     }
 }
 
+// Records a hold WITHOUT applying the layer change. Callers that consume the
+// event (return false) must call apply_qwerty_layer() themselves right after;
+// callers that let QMK resolve the key normally (return true) must NOT call
+// it here — see the big comment on process_record_user/post_process_record_user
+// for why the timing matters.
 static void add_qwerty_hold(keypos_t key, uint16_t unreg_kc, bool reveals, bool ime_toggle, bool consume) {
     qwerty_hold_t *slot = find_qwerty_hold(key); // reuse a stale slot for the same position
     if (!slot) {
@@ -192,7 +197,6 @@ static void add_qwerty_hold(keypos_t key, uint16_t unreg_kc, bool reveals, bool 
     slot->ime_toggle = ime_toggle;
     slot->consume    = consume;
     slot->active     = true;
-    apply_qwerty_layer();
 }
 
 // Called when the tap-dance term expires or a non-TD key is pressed.
@@ -318,6 +322,18 @@ void keyboard_post_init_user(void) {
 // All holds are tracked by matrix position (see qwerty_holds), so a release
 // is always paired with its press even when the layer — and therefore the
 // resolved keycode — changed between the two events.
+//
+// IMPORTANT timing note: QMK resolves a PRESS event's own action (register
+// the key/mod) in process_record_handler(), which runs AFTER this function
+// returns — but store_or_get_action() recomputes the layer fresh on every
+// press (it only uses the cached layer on release). So if we change the
+// _QWERTY layer bit *before* returning `true` here, THIS SAME keypress gets
+// re-resolved against the new layer instead of the one it was actually
+// pressed on. Ctrl/Alt therefore record their hold here but defer the actual
+// apply_qwerty_layer() call to post_process_record_user(), which runs after
+// this key's own action has already been resolved. Handlers that fully
+// consume the event (`return false`) never reach post-process, so they must
+// call apply_qwerty_layer() themselves, synchronously, right here.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!record->event.pressed) {
         qwerty_hold_t *hold = find_qwerty_hold(record->event.key);
@@ -342,13 +358,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // Switch OS IME to English, then reveal _BASE for typing.
                 tap_code16(LGUI(KC_SPC));
                 add_qwerty_hold(record->event.key, KC_NO, true, true, true);
+                apply_qwerty_layer(); // event is fully consumed below: apply now
             }
             return false;
 
         case KC_LCTL:
         case KC_LALT:
             // Holding Ctrl/Alt reveals _BASE while _QWERTY is selected so
-            // shortcuts use the ergonomic key positions.
+            // shortcuts use the ergonomic key positions. The layer change is
+            // deferred to post_process_record_user (see note above) so this
+            // very keypress still resolves to plain Ctrl/Alt.
             if (record->event.pressed) {
                 add_qwerty_hold(record->event.key, KC_NO, true, false, false);
             }
@@ -364,6 +383,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
                 register_code(td->base_kc);
                 add_qwerty_hold(record->event.key, td->base_kc, td->reveals, false, true);
+                apply_qwerty_layer(); // event is fully consumed below: apply now
                 return false;
             }
             return true; // _BASE selected: normal tap-dance handling
@@ -428,4 +448,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
     }
     return true;
+}
+
+// Runs after process_record_handler() has already resolved and executed this
+// key's own action. Safe point to apply any layer change requested above for
+// events that returned `true` (e.g. Ctrl/Alt reveal), without perturbing the
+// resolution of the key that triggered it.
+void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    apply_qwerty_layer();
 }
