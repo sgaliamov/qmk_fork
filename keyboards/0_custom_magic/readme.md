@@ -18,11 +18,11 @@ See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_to
 
 ## Layers
 
-| # | Name | Description |
-|---|------|-------------|
-| 0 | `_BASE` | Ergonomic default layout |
-| 1 | `_QWERTY` | Standard QWERTY layout |
-| 2 | `_FN` | Function / numpad / media layer (accessed via `MO(_FN)`) |
+| #   | Name      | Description                                              |
+| --- | --------- | -------------------------------------------------------- |
+| 0   | `_BASE`   | Ergonomic default layout                                 |
+| 1   | `_QWERTY` | Standard QWERTY layout                                   |
+| 2   | `_FN`     | Function / numpad / media layer (accessed via `MO(_FN)`) |
 
 ## Behavior
 
@@ -49,8 +49,8 @@ This keeps Ctrl/Alt shortcuts on the same physical keys as `_BASE` while typing 
 ### Tap-dance modifiers
 Four modifier keys use tap-dance for extended gestures when `_BASE` is the selected layout:
 
-| Key | Single tap | Single hold | Double tap | Double hold |
-|-----|-----------|-------------|------------|-------------|
+| Key       | Single tap  | Single hold | Double tap        | Double hold        |
+| --------- | ----------- | ----------- | ----------------- | ------------------ |
 | `TD_LSFT` | Send `LSFT` | Hold `LSFT` | Send `LSFT` twice | Hold `LALT`+`LSFT` |
 | `TD_RSFT` | Send `RSFT` | Hold `RSFT` | Send `RSFT` twice | Hold `LALT`+`RSFT` |
 | `TD_LALT` | Send `LALT` | Hold `LALT` | Send `LALT` twice | Hold `LALT`+`RCTL` |
@@ -64,9 +64,9 @@ Available as the innermost key on the right half of row 5 (the Z/N row, second-t
 ### Arrow string macros
 Two keys on the `_FN` layer send multi-character arrow strings:
 
-| Key | Output |
-|-----|--------|
-| `FN` + `X` | `=>` (fat arrow) |
+| Key        | Output            |
+| ---------- | ----------------- |
+| `FN` + `X` | `=>` (fat arrow)  |
 | `FN` + `D` | `->` (thin arrow) |
 
 ### Tap-dance toggle
