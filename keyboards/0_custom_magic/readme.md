@@ -47,13 +47,14 @@ This keeps Ctrl/Alt shortcuts on the same physical keys as `_BASE` while typing 
 `MO(_FN)` does **not** suspend `_QWERTY` by itself, and Shift keys never reveal `_BASE`.
 
 ### Tap-dance modifiers
-Four modifier keys use tap-dance for extended gestures when `_BASE` is the selected layout:
+Five modifier keys use tap-dance for extended gestures when `_BASE` is the selected layout:
 
 | Key       | Single tap  | Single hold | Double tap        | Double hold        |
 | --------- | ----------- | ----------- | ----------------- | ------------------ |
 | `TD_LSFT` | Send `LSFT` | Hold `LSFT` | Send `LSFT` twice | Hold `LALT`+`LSFT` |
 | `TD_RSFT` | Send `RSFT` | Hold `RSFT` | Send `RSFT` twice | Hold `LALT`+`RSFT` |
 | `TD_LALT` | Send `LALT` | Hold `LALT` | Send `LALT` twice | Hold `LALT`+`RCTL` |
+| `TD_LCTL` | Send `LCTL` | Hold `LCTL` | Send `LCTL` twice | Hold `LSFT`+`LCTL` |
 | `TD_RCTL` | Send `RCTL` | Hold `RCTL` | Send `RCTL` twice | Hold `RSFT`+`RCTL` |
 
 When `_QWERTY` is selected, tap dance is bypassed for these keys: they behave as plain modifiers without the tap-dance wait. The Ctrl / Alt variants still temporarily reveal `_BASE` for shortcuts; the Shift variants remain plain Shift and retain the both-Shift combo detection delay.

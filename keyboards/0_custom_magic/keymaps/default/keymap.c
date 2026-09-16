@@ -22,6 +22,7 @@ enum tap_dances {
     TD_LSFT, // base: LSFT, double-hold combo: LALT + LSFT
     TD_RSFT, // base: RSFT, double-hold combo: LALT + RSFT
     TD_LALT, // base: LALT, double-hold combo: LALT + RCTL
+    TD_LCTL, // base: LCTL, double-hold combo: LSFT + LCTL
     TD_RCTL, // base: RCTL, double-hold combo: RSFT + RCTL
 };
 
@@ -64,7 +65,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      KC_COMM,     KC_C,        KC_P,        KC_Y,        KC_J,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_B,        KC_W,        KC_N,        KC_U,        KC_DOT,      LBRC_SWAP,
         KC_ENT,      KC_L,        KC_R,        KC_E,        KC_O,        KC_S,        KC_SLSH,     KC_HOME,             KC_PGUP,     QUOT_SWAP,   KC_H,        KC_A,        KC_T,        KC_I,        KC_D,        KC_ENT,
         KC_DEL,      KC_SCLN,     KC_V,        KC_G,        KC_M,        KC_X,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_Z,        KC_F,        KC_K,        KC_Q,        KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     TD(TD_LALT)
+        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     TD(TD_LALT)
     ),
 
     [_QWERTY] = LAYOUT(
@@ -73,7 +74,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_P,        KC_LBRC,
         KC_ENT,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_SCLN,     KC_ENT,
         KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        KC_B,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_BSPC,
-        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_BSLS,             KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_LALT
+        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_BSLS,             KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
     ),
 
     [_FN] = LAYOUT(
@@ -82,7 +83,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      KC_COMM,     C(KC_W),     XXXXXXX,     XXXXXXX,     KC_MPLY,     TD_TOGGLE,   XXXXXXX,             XXXXXXX,     KC_NUM,      KC_PDOT,     KC_P1,       KC_P2,       KC_P3,       KC_DOT,      KC_LBRC,
         KC_PEQL,     C(KC_A),     C(KC_N),     C(KC_H),     C(KC_F),     ARROW_THIN,  KC_PSLS,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_SCLN,     KC_P4,       KC_P5,       KC_P6,       KC_P0,       KC_PENT,
         KC_DEL,      KC_SCLN,     C(KC_Z),     C(KC_B),     XXXXXXX,     ARROW_FAT,   KC_PMNS,     KC_END,              KC_PGDN,     KC_PPLS,     KC_PAST,     KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_RCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
+        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
     )
 };
 
@@ -110,6 +111,7 @@ typedef struct {
     bool           reveals;    // When bypassed on QWERTY, the plain hold also reveals _BASE
 } mod_td_user_data_t;
 
+static mod_td_user_data_t lctl_td_data = {MOD_TD_NONE, KC_LCTL, MOD_BIT(KC_LSFT) | MOD_BIT(KC_LCTL), true};
 static mod_td_user_data_t rctl_td_data = {MOD_TD_NONE, KC_RCTL, MOD_BIT(KC_RSFT) | MOD_BIT(KC_RCTL), true};
 static mod_td_user_data_t lsft_td_data = {MOD_TD_NONE, KC_LSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT), false};
 static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT), false};
@@ -249,6 +251,7 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_LSFT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lsft_td_data},
     [TD_RSFT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rsft_td_data},
     [TD_LALT] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lalt_td_data},
+    [TD_LCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lctl_td_data},
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
 };
 
@@ -355,6 +358,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case TD(TD_LSFT):
         case TD(TD_RSFT):
         case TD(TD_LALT):
+        case TD(TD_LCTL):
         case TD(TD_RCTL):
             // Bypass before QMK starts a dance, not in the finished callback.
             // Track the press so toggling mid-hold cannot change its release.
