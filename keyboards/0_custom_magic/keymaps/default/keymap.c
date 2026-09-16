@@ -209,27 +209,6 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
     mod_td_user_data_t *td = (mod_td_user_data_t *)user_data;
     td->state              = resolve_mod_td(state);
 
-    if (!tap_dance_enabled) {
-        if (td->state == MOD_TD_DOUBLE_HOLD) {
-            td->state = MOD_TD_SINGLE_HOLD;
-        }
-        switch (td->state) {
-            case MOD_TD_SINGLE_TAP:
-                tap_code(td->base_kc);
-                break;
-            case MOD_TD_SINGLE_HOLD:
-                register_code(td->base_kc);
-                break;
-            case MOD_TD_DOUBLE_TAP:
-                tap_code(td->base_kc);
-                tap_code(td->base_kc);
-                break;
-            default:
-                break;
-        }
-        return;
-    }
-
     switch (td->state) {
         case MOD_TD_SINGLE_TAP:
             tap_code(td->base_kc);
@@ -314,10 +293,10 @@ void keyboard_post_init_user(void) {
 // Shift never reveals _BASE: Shift+letter must produce the capitalised
 // character of the active language.
 //
-// Tap-dance modifiers — while _QWERTY is the selected layout, tap dance is
-// bypassed entirely: the TD keys reachable through _FN or the revealed _BASE
-// act as instant plain modifiers (Ctrl/Alt ones also reveal _BASE).  Tap
-// dance stays fully functional when _BASE is the selected layout.
+// Tap-dance modifiers — while disabled or _QWERTY is selected, bypass tap
+// dance: TD keys on _BASE and _FN act as plain modifiers without waiting for
+// TAPPING_TERM (Ctrl/Alt ones also reveal _BASE). Shift keys still pass through
+// the both-Shift combo buffer. Otherwise the normal tap-dance gestures apply.
 //
 // All holds are tracked by matrix position (see qwerty_holds), so a release
 // is always paired with its press even when the layer — and therefore the
@@ -377,16 +356,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case TD(TD_RSFT):
         case TD(TD_LALT):
         case TD(TD_RCTL):
-            // QWERTY selected: no tap dance — act as an instant plain
-            // modifier; Ctrl/Alt additionally reveal _BASE for the hold.
-            if (record->event.pressed && qwerty_selected) {
+            // Bypass before QMK starts a dance, not in the finished callback.
+            // Track the press so toggling mid-hold cannot change its release.
+            if (record->event.pressed && (qwerty_selected || !tap_dance_enabled)) {
                 mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
                 register_code(td->base_kc);
                 add_qwerty_hold(record->event.key, td->base_kc, td->reveals, false, true);
                 apply_qwerty_layer(); // event is fully consumed below: apply now
                 return false;
             }
-            return true; // _BASE selected: normal tap-dance handling
+            return true; // Normal tap dance, including releases of existing dances
 
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");

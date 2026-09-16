@@ -56,7 +56,7 @@ Four modifier keys use tap-dance for extended gestures when `_BASE` is the selec
 | `TD_LALT` | Send `LALT` | Hold `LALT` | Send `LALT` twice | Hold `LALT`+`RCTL` |
 | `TD_RCTL` | Send `RCTL` | Hold `RCTL` | Send `RCTL` twice | Hold `RSFT`+`RCTL` |
 
-When `_QWERTY` is selected, tap dance is bypassed for these keys: they behave as immediate plain modifiers instead. The Ctrl / Alt variants still temporarily reveal `_BASE` for shortcuts; the Shift variants remain plain Shift.
+When `_QWERTY` is selected, tap dance is bypassed for these keys: they behave as plain modifiers without the tap-dance wait. The Ctrl / Alt variants still temporarily reveal `_BASE` for shortcuts; the Shift variants remain plain Shift and retain the both-Shift combo detection delay.
 
 ### TEMP_EN (temporary English IME)
 Available as the innermost key on the right half of row 5 (the Z/N row, second-to-last row) in `_QWERTY`. On press it sends **Win+Space** to ask the OS to switch the IME to English, then reveals `_BASE` (ergonomic English layout) for the duration of the hold. On release it restores `_QWERTY` and sends **Win+Space** again to revert the IME.
@@ -70,7 +70,7 @@ Two keys on the `_FN` layer send multi-character arrow strings:
 | `FN` + `D` | `->` (thin arrow) |
 
 ### Tap-dance toggle
-The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, the modifier keys on `_BASE` act like plain held/tapped modifiers instead of the custom combo gestures. On `_QWERTY`, these keys are already forced to behave as plain modifiers.
+The `_FN` layer includes a dedicated toggle key that switches the custom tap-dance modifier behavior on or off. When disabled, tap-dance modifier keys on `_BASE` and `_FN` register on press and unregister on release without waiting for the tap-dance timeout. Both-Shift layout switching remains available, so Shift keys still have the separate combo detection delay. Toggling while a modifier is held does not change how that hold is released. On `_QWERTY`, these keys already bypass tap dance regardless of the toggle.
 
 ## Bootloader
 
