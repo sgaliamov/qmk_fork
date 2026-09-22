@@ -72,6 +72,8 @@ static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
     return MOD_TD_NONE;
 }
 
+static bool tap_dance_enabled = true;
+
 void mod_td_finished(tap_dance_state_t *state, void *user_data);
 void mod_td_reset(tap_dance_state_t *state, void *user_data);
 
@@ -121,10 +123,24 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
     td->state = MOD_TD_NONE;
 }
 
-static bool tap_dance_enabled = true;
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
+        case TD(TD_LSFT):
+        case TD(TD_RSFT):
+        case TD(TD_LALT):
+        case TD(TD_LCTL):
+        case TD(TD_RCTL):
+            if (!tap_dance_enabled) {
+                mod_td_user_data_t *td = (mod_td_user_data_t *)tap_dance_actions[TD_INDEX(keycode)].user_data;
+                if (record->event.pressed) {
+                    register_code(td->base_kc);
+                    return false;
+                }
+                unregister_code(td->base_kc);
+                return false;
+            }
+            return true;
+
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");
             return false;
