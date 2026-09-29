@@ -7,8 +7,8 @@
 #define LED_INDICATOR_PIN GP17
 
 // Layer indices.
-// _FN is the highest-priority layer so a held MO(_FN) is never shadowed by the
-// opaque _QWERTY layer; QMK then resolves it natively with no extra code.
+// _FN is the highest-priority layer so an active OS_FN (held or queued) is
+// never shadowed by the opaque _QWERTY layer.
 enum layers {
     _BASE,   // Ergonomic (default)
     _QWERTY, // Standard QWERTY
@@ -36,6 +36,7 @@ enum custom_keycodes {
     LBRC_SWAP,  // _BASE: { when unshifted, [ when shifted
     RBRC_SWAP,  // _BASE: } when unshifted, ] when shifted
     TD_TOGGLE,  // toggles the custom modifier tap-dance behavior on/off
+    OS_FN,      // custom one-shot for _FN that survives (tap-dance) modifiers
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -62,10 +63,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT(
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      KC_PSCR,
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        RBRC_SWAP,
-        KC_TAB,      KC_COMM,     KC_C,        KC_P,        KC_Y,        KC_J,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_B,        KC_W,        KC_N,        KC_U,        KC_DOT,      LBRC_SWAP,
-        KC_ENT,      KC_L,        KC_R,        KC_E,        KC_O,        KC_S,        KC_SLSH,     KC_HOME,             KC_PGUP,     QUOT_SWAP,   KC_H,        KC_A,        KC_T,        KC_I,        KC_D,        KC_ENT,
-        KC_DEL,      KC_SCLN,     KC_V,        KC_G,        KC_M,        KC_X,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_Z,        KC_F,        KC_K,        KC_Q,        KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     TD(TD_LALT)
+        KC_TAB,      KC_COMM,     KC_V,        KC_H,        KC_K,        KC_P,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Z,        KC_L,        KC_R,        KC_F,        KC_DOT,      LBRC_SWAP,
+        KC_ENT,      KC_C,        KC_T,        KC_O,        KC_E,        KC_D,        KC_SLSH,     KC_HOME,             KC_PGUP,     QUOT_SWAP,   KC_S,        KC_N,        KC_I,        KC_A,        KC_U,        KC_ENT,
+        KC_DEL,      KC_SCLN,     KC_Y,        KC_M,        KC_B,        KC_J,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_X,        KC_G,        KC_W,        KC_Q,        KC_UP,       KC_BSPC,
+        TD(TD_LALT), OS_FN,       KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     TD(TD_LALT)
     ),
 
     [_QWERTY] = LAYOUT(
@@ -74,16 +75,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,      KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_P,        KC_LBRC,
         KC_ENT,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_SCLN,     KC_ENT,
         KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        KC_B,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_BSPC,
-        KC_LALT,     MO(_FN),     KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_BSLS,             KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
+        KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     KC_BSLS,             KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
     ),
 
     [_FN] = LAYOUT(
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      KC_PSCR,
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
-        KC_TAB,      KC_COMM,     C(KC_W),     XXXXXXX,     XXXXXXX,     KC_MPLY,     TD_TOGGLE,   XXXXXXX,             XXXXXXX,     KC_NUM,      KC_PDOT,     KC_P1,       KC_P2,       KC_P3,       KC_DOT,      KC_LBRC,
-        KC_PEQL,     C(KC_A),     C(KC_N),     C(KC_H),     C(KC_F),     ARROW_THIN,  KC_PSLS,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_SCLN,     KC_P4,       KC_P5,       KC_P6,       KC_P0,       KC_PENT,
-        KC_DEL,      KC_SCLN,     C(KC_Z),     C(KC_B),     XXXXXXX,     ARROW_FAT,   KC_PMNS,     KC_END,              KC_PGDN,     KC_PPLS,     KC_PAST,     KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
+        KC_TAB,      KC_COMM,     KC_F,        KC_R,        KC_L,        KC_Z,        TD_TOGGLE,   XXXXXXX,             XXXXXXX,     KC_NUM,      KC_P0,       KC_P1,       KC_P2,       KC_P3,       KC_DOT,      KC_LBRC,
+        KC_PENT,     KC_U,        KC_A,        KC_I,        KC_N,        KC_S,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     ARROW_FAT,   KC_P4,       KC_P5,       KC_P6,       KC_MPLY,     KC_PEQL,
+        KC_DEL,      KC_SCLN,     KC_Q,        KC_W,        KC_G,        KC_X,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
+        TD(TD_LALT), OS_FN,       KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_DOWN,     KC_RALT
     )
 };
 
@@ -255,6 +256,60 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
 };
 
+// ---------------------------------------------------------------------------
+// Custom one-shot _FN layer (OS_FN)
+//
+// QMK's OSL() cancels the one-shot layer whenever a key event is consumed by
+// a processor — which tap dance always does — so the TD() modifier keys used
+// on this keymap would kill the one-shot before a letter could be pressed.
+// This keymap-level replacement keeps _FN active across any number of
+// modifier presses (plain or tap-dance) and releases it only after the first
+// non-modifier ("character") key press:
+//   hold OS_FN  → momentary _FN; drops on release if a character was used,
+//                 otherwise stays queued as a one-shot
+//   tap OS_FN   → _FN stays on until the next character key
+// The layer-off for the consuming key is deferred (pending flag) so that key
+// itself still resolves on _FN — see the timing note above
+// process_record_user.
+// ---------------------------------------------------------------------------
+typedef enum {
+    OS_FN_OFF,
+    OS_FN_HELD,   // OS_FN physically held: momentary _FN
+    OS_FN_QUEUED, // released without use: one-shot armed
+} os_fn_state_t;
+
+static os_fn_state_t os_fn_state       = OS_FN_OFF;
+static bool          os_fn_used        = false; // character pressed during hold
+static bool          os_fn_pending_off = false; // drop _FN once current key resolved
+
+// Keys that must NOT consume the one-shot: OS_FN itself, the tap-dance
+// modifiers (also covers their bypass path, which shares the TD keycodes) and
+// plain modifiers.
+static bool os_fn_ignored_key(uint16_t keycode) {
+    switch (keycode) {
+        case OS_FN:
+        case TD(TD_LSFT):
+        case TD(TD_RSFT):
+        case TD(TD_LALT):
+        case TD(TD_LCTL):
+        case TD(TD_RCTL):
+        case KC_LCTL ... KC_RGUI:
+            return true;
+    }
+    return false;
+}
+
+// Applies a deferred one-shot layer-off. Called from post_process_record_user
+// (keys QMK resolves itself) and housekeeping_task_user (keys consumed inside
+// process_record_user, which never reach post-process).
+static void os_fn_flush(void) {
+    if (os_fn_pending_off) {
+        os_fn_pending_off = false;
+        os_fn_state       = OS_FN_OFF;
+        layer_off(_FN);
+    }
+}
+
 // Toggle the selected layout (_BASE <-> _QWERTY) when both Shift keys are held
 // simultaneously — either the tap-dance pair on _BASE/_FN or the plain pair on
 // _QWERTY.  Also sends Win+Space to switch the OS input method (e.g. IME).
@@ -278,11 +333,13 @@ void keyboard_post_init_user(void) {
     gpio_write_pin_low(LED_INDICATOR_PIN);
 }
 
-// MO(_FN) needs no handling here: _FN is the highest-priority layer, so a held
-// MO(_FN) always wins over _QWERTY and QMK resolves it natively.  The two _FN
-// positions that differ between _BASE and _QWERTY (the quote key and the right
-// thumb key) are pinned in the _FN layout so Fn shortcuts are identical on both
-// base layers.
+// OS_FN — custom one-shot for _FN (see the comment block above os_fn_state):
+// _FN is the highest-priority layer, so while held or queued it always wins
+// over _QWERTY and keys resolve to the _FN (mirrored) positions. Modifiers —
+// plain or tap-dance — never cancel it; the first character key does. The two
+// _FN positions that differ between _BASE and _QWERTY (the quote key and the
+// right thumb key) are pinned in the _FN layout so Fn shortcuts are identical
+// on both base layers.
 //
 // TEMP_EN — sends Win+Space to ask the OS to switch the IME to English, then
 // reveals _BASE (ergonomic English layout) for the hold duration.  Sends
@@ -334,7 +391,35 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
     }
 
+    // One-shot _FN use detection: any pressed key that is not a modifier
+    // (plain or tap-dance) consumes the one-shot. While held, just remember
+    // the use; while queued, schedule the deferred layer-off so this very
+    // press still resolves on _FN.
+    if (record->event.pressed && os_fn_state != OS_FN_OFF && !os_fn_ignored_key(keycode)) {
+        if (os_fn_state == OS_FN_HELD) {
+            os_fn_used = true;
+        } else {
+            os_fn_pending_off = true;
+        }
+    }
+
     switch (keycode) {
+        case OS_FN:
+            if (record->event.pressed) {
+                os_fn_used        = false;
+                os_fn_pending_off = false;
+                os_fn_state       = OS_FN_HELD;
+                layer_on(_FN);
+            } else if (os_fn_state == OS_FN_HELD) {
+                if (os_fn_used) {
+                    os_fn_state = OS_FN_OFF;
+                    layer_off(_FN);
+                } else {
+                    os_fn_state = OS_FN_QUEUED;
+                }
+            }
+            return false;
+
         case TEMP_EN:
             if (record->event.pressed) {
                 // Switch OS IME to English, then reveal _BASE for typing.
@@ -439,4 +524,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 // resolution of the key that triggered it.
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     apply_qwerty_layer();
+    os_fn_flush();
+}
+
+// Catches deferred one-shot layer-offs scheduled by keys that were fully
+// consumed in process_record_user (they never reach post-process). Runs after
+// the whole event has been resolved, so the timing is safe.
+void housekeeping_task_user(void) {
+    os_fn_flush();
 }
