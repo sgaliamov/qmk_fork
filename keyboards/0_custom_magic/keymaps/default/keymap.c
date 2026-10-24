@@ -7,8 +7,8 @@
 // GPIO pin driving the layer-indicator LED.
 #define LED_INDICATOR_PIN GP17
 #define LED_PWM_OFF      0
-#define LED_PWM_QWERTY   80
-#define LED_PWM_FIGHT    180
+#define LED_PWM_QWERTY   180
+#define LED_PWM_FIGHT    80
 
 // Layer indices.
 // _FN is the highest-priority layer so an active OS_FN (held or queued) is
@@ -42,8 +42,10 @@ enum custom_keycodes {
     RBRC_SWAP,        // _BASE: } when unshifted, ] when shifted
     TD_TOGGLE,        // toggles the custom modifier tap-dance behavior on/off
     OS_FN,            // custom one-shot for _FN that survives (tap-dance) modifiers
-    TEKKEN_UP_DOWN,   // sends Up then Down for one-input helper combos
-    TEKKEN_DOWN_UP,   // sends Down then Up for one-input helper combos
+    UP_LEFT,          // sends Up then Left for one-input helper combos
+    UP_RIGHT,         // sends Up then Right for one-input helper combos
+    DOWN_LEFT,        // sends Down then Left for one-input helper combos
+    DOWN_RIGHT,       // sends Down then Right for one-input helper combos
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -95,12 +97,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 
     [_FGHT] = LAYOUT(
-        KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      TEMP_EN,
-        KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
-        KC_TAB,      KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_P,        KC_LBRC,
-        KC_ENT,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_SCLN,     KC_ENT,
-        KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        TG(_FGHT),   KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_BSPC,
-        KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     TEKKEN_UP_DOWN,      KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_RALT,     TEKKEN_DOWN_UP
+        KC_ESC,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
+        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
+        XXXXXXX,     XXXXXXX,     KC_W,        KC_W,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_U,        KC_I,        KC_O,        XXXXXXX,     XXXXXXX,
+        KC_ENT,      UP_LEFT,     KC_A,        KC_D,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_J,        KC_K,        KC_L,        XXXXXXX,     KC_ENT,
+        XXXXXXX,     DOWN_LEFT,   KC_S,        KC_S,        DOWN_RIGHT,  TG(_FGHT),   XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_P,        KC_SCLN,     KC_V,        XXXXXXX,     XXXXXXX,
+        XXXXXXX,     OS_FN,       XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_SPC,      XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
 
 };
@@ -487,19 +489,35 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return true; // Normal tap dance, including releases of existing dances
 
-        case TEKKEN_UP_DOWN:
+        case UP_LEFT:
             if (record->event.pressed) {
                 tap_code(KC_UP);
                 wait_ms(20);
-                tap_code(KC_DOWN);
+                tap_code(KC_LEFT);
             }
             return false;
 
-        case TEKKEN_DOWN_UP:
+        case UP_RIGHT:
+            if (record->event.pressed) {
+                tap_code(KC_UP);
+                wait_ms(20);
+                tap_code(KC_RIGHT);
+            }
+            return false;
+
+        case DOWN_LEFT:
             if (record->event.pressed) {
                 tap_code(KC_DOWN);
                 wait_ms(20);
-                tap_code(KC_UP);
+                tap_code(KC_LEFT);
+            }
+            return false;
+
+        case DOWN_RIGHT:
+            if (record->event.pressed) {
+                tap_code(KC_DOWN);
+                wait_ms(20);
+                tap_code(KC_RIGHT);
             }
             return false;
 
@@ -562,11 +580,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
 
-        case FIGHT:
-            if (record->event.pressed) {
-                layer_invert(_FGHT);
-            }
-            return false;
     }
     return true;
 }
