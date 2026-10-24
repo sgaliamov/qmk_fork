@@ -101,8 +101,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_FGHT] = LAYOUT(
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
         XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     XXXXXXX,     KC_W,        KC_W,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_P,        KC_U,        KC_I,        KC_O,        XXXXXXX,     XXXXXXX,
-        KC_ENT,      UP_LEFT,     KC_A,        KC_D,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_SCLN,     KC_J,        KC_K,        KC_L,        XXXXXXX,     KC_ENT,
+        XXXXXXX,     XXXXXXX,     KC_W,        KC_W,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
+        KC_ENT,      UP_LEFT,     KC_A,        KC_D,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
         XXXXXXX,     DOWN_LEFT,   KC_S,        KC_S,        DOWN_RIGHT,  TG(_FGHT),   XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
         KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
