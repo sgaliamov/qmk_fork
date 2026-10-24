@@ -44,10 +44,12 @@ enum custom_keycodes {
     RBRC_SWAP,        // _BASE: } when unshifted, ] when shifted
     TD_TOGGLE,        // toggles the custom modifier tap-dance behavior on/off
     OS_FN,            // custom one-shot for _FN that survives (tap-dance) modifiers
-    UP_LEFT,          // sends Up then Left for one-input helper combos
-    UP_RIGHT,         // sends Up then Right for one-input helper combos
-    DOWN_LEFT,        // sends Down then Left for one-input helper combos
-    DOWN_RIGHT,       // sends Down then Right for one-input helper combos
+    UP_LEFT,          // sends W then A for one-input helper combos
+    UP_RIGHT,         // sends W then D for one-input helper combos
+    DOWN_LEFT,        // sends S then A for one-input helper combos
+    DOWN_RIGHT,       // sends S then D for one-input helper combos
+    LEFT_LEFT,        // sends A then A for one-input helper combos
+    RIGHT_RIGHT,      // sends D then D for one-input helper combos
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -101,8 +103,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_FGHT] = LAYOUT(
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
         XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     XXXXXXX,     KC_W,        KC_W,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
-        KC_ENT,      UP_LEFT,     KC_A,        KC_D,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
+        XXXXXXX,     UP_LEFT,     KC_W,        KC_W,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
+        KC_ENT,      LEFT_LEFT,   KC_A,        KC_D,        RIGHT_RIGHT, XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
         XXXXXXX,     DOWN_LEFT,   KC_S,        KC_S,        DOWN_RIGHT,  TG(_FGHT),   XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
         KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
@@ -500,33 +502,55 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         case UP_LEFT:
             if (record->event.pressed) {
-                tap_code(KC_UP);
-                wait_ms(20);
-                tap_code(KC_LEFT);
+                register_code(KC_W);
+                register_code(KC_A);
+                unregister_code(KC_A);
+                unregister_code(KC_W);
             }
             return false;
 
         case UP_RIGHT:
             if (record->event.pressed) {
-                tap_code(KC_UP);
-                wait_ms(20);
-                tap_code(KC_RIGHT);
+                register_code(KC_W);
+                register_code(KC_D);
+                unregister_code(KC_D);
+                unregister_code(KC_W);
             }
             return false;
 
         case DOWN_LEFT:
             if (record->event.pressed) {
-                tap_code(KC_DOWN);
-                wait_ms(20);
-                tap_code(KC_LEFT);
+                register_code(KC_S);
+                register_code(KC_A);
+                unregister_code(KC_A);
+                unregister_code(KC_S);
             }
             return false;
 
         case DOWN_RIGHT:
             if (record->event.pressed) {
-                tap_code(KC_DOWN);
-                wait_ms(20);
-                tap_code(KC_RIGHT);
+                register_code(KC_S);
+                register_code(KC_D);
+                unregister_code(KC_D);
+                unregister_code(KC_S);
+            }
+            return false;
+
+        case LEFT_LEFT:
+            if (record->event.pressed) {
+                register_code(KC_A);
+                unregister_code(KC_A);
+                register_code(KC_A);
+                unregister_code(KC_A);
+            }
+            return false;
+
+        case RIGHT_RIGHT:
+            if (record->event.pressed) {
+                register_code(KC_D);
+                unregister_code(KC_D);
+                register_code(KC_D);
+                unregister_code(KC_D);
             }
             return false;
 
