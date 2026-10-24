@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
+#include "hardware/pwm.h"
 
 // GPIO pin driving the layer-indicator LED.
 #define LED_INDICATOR_PIN GP17
+#define LED_PWM_OFF      0
+#define LED_PWM_QWERTY   80
+#define LED_PWM_FIGHT    180
 
 // Layer indices.
 // _FN is the highest-priority layer so an active OS_FN (held or queued) is
@@ -12,7 +16,8 @@
 enum layers {
     _BASE,   // Ergonomic (default)
     _QWERTY, // Standard QWERTY
-    _FN      // Function / shortcut (highest priority)
+    _FN,     // Function / shortcut (highest priority)
+    _FGHT    // Fighting-game layer
 };
 
 // Tap dance indices for custom modifier keys:
@@ -37,6 +42,8 @@ enum custom_keycodes {
     RBRC_SWAP,        // _BASE: } when unshifted, ] when shifted
     TD_TOGGLE,        // toggles the custom modifier tap-dance behavior on/off
     OS_FN,            // custom one-shot for _FN that survives (tap-dance) modifiers
+    TEKKEN_UP_DOWN,   // sends Up then Down for one-input helper combos
+    TEKKEN_DOWN_UP,   // sends Down then Up for one-input helper combos
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -83,9 +90,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
         KC_TAB,      KC_X,        KC_F,        KC_O,        KC_B,        KC_J,        TD_TOGGLE,   XXXXXXX,             XXXXXXX,     KC_NUM,      KC_P0,       KC_P1,       KC_P2,       KC_P3,       KC_J,        KC_LBRC,
         KC_PENT,     KC_S,        KC_N,        KC_A,        KC_I,        KC_D,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     ARROW_FAT,   KC_P4,       KC_P5,       KC_P6,       KC_MPLY,     KC_PEQL,
-        KC_DEL,      KC_Q,        KC_U,        KC_Y,        KC_SCLN,     FIGHT,       KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
+        KC_DEL,      KC_Q,        KC_U,        KC_Y,        KC_SCLN,     TG(_FGHT),   KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
         TD(TD_LALT), OS_FN,       KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_RALT,     KC_DOWN
     )
+
+    [_FGHT] = LAYOUT(
+        KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_F8,       KC_F9,       KC_F10,      KC_F11,      KC_F12,      TEMP_EN,
+        KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
+        KC_TAB,      KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_P,        KC_LBRC,
+        KC_ENT,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_SCLN,     KC_ENT,
+        KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        TG(_FGHT),   KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_BSPC,
+        KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     TEKKEN_UP_DOWN,      KC_INS,      KC_RSFT,     KC_SPC,      KC_RCTL,     KC_LEFT,     KC_RGHT,     KC_RALT,     TEKKEN_DOWN_UP
+    )
+
 };
 
 // clang-format on
@@ -321,16 +338,30 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
     }
 }
 
-// Layer-indicator LED: on when _QWERTY is active, off otherwise.
+// Layer-indicator LED: dim for _QWERTY, brighter for _FGHT, off otherwise.
 layer_state_t layer_state_set_user(layer_state_t state) {
-    gpio_write_pin(LED_INDICATOR_PIN, IS_LAYER_ON_STATE(state, _QWERTY));
+    bool qwerty = IS_LAYER_ON_STATE(state, _QWERTY);
+    bool fight  = IS_LAYER_ON_STATE(state, _FGHT);
+
+    gpio_set_function(LED_INDICATOR_PIN, GPIO_FUNC_PWM);
+    if (fight) {
+        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_FIGHT);
+    } else if (qwerty) {
+        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_QWERTY);
+    } else {
+        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_OFF);
+    }
     return state;
 }
 
-// Configure the layer-indicator LED pin as output and ensure it starts off.
+// Configure the layer-indicator LED pin as a PWM output and ensure it starts off.
 void keyboard_post_init_user(void) {
-    gpio_set_pin_output(LED_INDICATOR_PIN);
-    gpio_write_pin_low(LED_INDICATOR_PIN);
+    gpio_set_function(LED_INDICATOR_PIN, GPIO_FUNC_PWM);
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, 32.0f);
+    pwm_config_set_wrap(&config, 255);
+    pwm_init(pwm_gpio_to_slice_num(LED_INDICATOR_PIN), &config, true);
+    pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_OFF);
 }
 
 // OS_FN — custom one-shot for _FN (see the comment block above os_fn_state):
@@ -456,6 +487,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return true; // Normal tap dance, including releases of existing dances
 
+        case TEKKEN_UP_DOWN:
+            if (record->event.pressed) {
+                tap_code(KC_UP);
+                wait_ms(20);
+                tap_code(KC_DOWN);
+            }
+            return false;
+
+        case TEKKEN_DOWN_UP:
+            if (record->event.pressed) {
+                tap_code(KC_DOWN);
+                wait_ms(20);
+                tap_code(KC_UP);
+            }
+            return false;
+
         case ARROW_FAT:
             if (record->event.pressed) SEND_STRING("=>");
             return false;
@@ -512,6 +559,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case TD_TOGGLE:
             if (record->event.pressed) {
                 tap_dance_enabled = !tap_dance_enabled;
+            }
+            return false;
+
+        case FIGHT:
+            if (record->event.pressed) {
+                layer_invert(_FGHT);
             }
             return false;
     }
