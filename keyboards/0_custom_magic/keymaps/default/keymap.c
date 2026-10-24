@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include QMK_KEYBOARD_H
-#include "hardware/pwm.h"
 
-// GPIO pin driving the layer-indicator LED.
+// Layer-indicator LED on GP17, driven by RP2040 PWM slice 0 channel B
+// (ChibiOS channel index 1). Duty values are out of LED_PWM_PERIOD.
 #define LED_INDICATOR_PIN GP17
-#define LED_PWM_OFF      0
+#define LED_PWM_DRIVER   PWMD0
+#define LED_PWM_CHANNEL  1
+#define LED_PWM_PERIOD   256
 #define LED_PWM_QWERTY   180
 #define LED_PWM_FIGHT    80
 
@@ -94,7 +96,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_PENT,     KC_S,        KC_N,        KC_A,        KC_I,        KC_D,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     ARROW_FAT,   KC_P4,       KC_P5,       KC_P6,       KC_MPLY,     KC_PEQL,
         KC_DEL,      KC_Q,        KC_U,        KC_Y,        KC_SCLN,     TG(_FGHT),   KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
         TD(TD_LALT), OS_FN,       KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     KC_RALT,     KC_DOWN
-    )
+    ),
 
     [_FGHT] = LAYOUT(
         KC_ESC,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
@@ -340,30 +342,37 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
     }
 }
 
-// Layer-indicator LED: dim for _QWERTY, brighter for _FGHT, off otherwise.
-layer_state_t layer_state_set_user(layer_state_t state) {
-    bool qwerty = IS_LAYER_ON_STATE(state, _QWERTY);
-    bool fight  = IS_LAYER_ON_STATE(state, _FGHT);
+// Layer-indicator LED: brighter for _QWERTY, dimmer for _FGHT, off otherwise.
+static PWMConfig led_pwm_cfg = {
+    .frequency = 1000000, // 1 MHz counter -> ~3.9 kHz PWM, no visible flicker
+    .period    = LED_PWM_PERIOD,
+    .channels  = {
+        [0] = {.mode = PWM_OUTPUT_DISABLED},
+        [1] = {.mode = PWM_OUTPUT_ACTIVE_HIGH},
+    },
+};
 
-    gpio_set_function(LED_INDICATOR_PIN, GPIO_FUNC_PWM);
-    if (fight) {
-        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_FIGHT);
-    } else if (qwerty) {
-        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_QWERTY);
+static void led_indicator_update(layer_state_t state) {
+    if (LED_PWM_DRIVER.state != PWM_READY) return;
+
+    if (IS_LAYER_ON_STATE(state, _FGHT)) {
+        pwmEnableChannel(&LED_PWM_DRIVER, LED_PWM_CHANNEL, LED_PWM_FIGHT);
+    } else if (IS_LAYER_ON_STATE(state, _QWERTY)) {
+        pwmEnableChannel(&LED_PWM_DRIVER, LED_PWM_CHANNEL, LED_PWM_QWERTY);
     } else {
-        pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_OFF);
+        pwmDisableChannel(&LED_PWM_DRIVER, LED_PWM_CHANNEL);
     }
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    led_indicator_update(state);
     return state;
 }
 
-// Configure the layer-indicator LED pin as a PWM output and ensure it starts off.
 void keyboard_post_init_user(void) {
-    gpio_set_function(LED_INDICATOR_PIN, GPIO_FUNC_PWM);
-    pwm_config config = pwm_get_default_config();
-    pwm_config_set_clkdiv(&config, 32.0f);
-    pwm_config_set_wrap(&config, 255);
-    pwm_init(pwm_gpio_to_slice_num(LED_INDICATOR_PIN), &config, true);
-    pwm_set_gpio_level(LED_INDICATOR_PIN, LED_PWM_OFF);
+    palSetLineMode(LED_INDICATOR_PIN, PAL_MODE_ALTERNATE_PWM);
+    pwmStart(&LED_PWM_DRIVER, &led_pwm_cfg);
+    led_indicator_update(layer_state);
 }
 
 // OS_FN — custom one-shot for _FN (see the comment block above os_fn_state):

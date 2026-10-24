@@ -23,6 +23,7 @@ See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_to
 | 0   | `_BASE`   | Ergonomic default layout                                 |
 | 1   | `_QWERTY` | Standard QWERTY layout                                   |
 | 2   | `_FN`     | Function / numpad / media layer (accessed via `MO(_FN)`) |
+| 3   | `_FGHT`   | Fighting-game layer (toggled via `TG(_FGHT)` on `_FN`)   |
 
 ## Behavior
 
@@ -32,7 +33,7 @@ Hold both Shift keys simultaneously to toggle between `_BASE` (ergonomic) and `_
 - the tap-dance Shift pair on `_BASE` / `_FN` (`TD_LSFT` + `TD_RSFT`)
 - the plain Shift pair on `_QWERTY` (`KC_LSFT` + `KC_RSFT`)
 
-Each toggle also sends **Win+Space** to switch the OS IME in sync with the selected layout. A layer-indicator LED (GP17) turns on while `_QWERTY` is active.
+Each toggle also sends **Win+Space** to switch the OS IME in sync with the selected layout. A PWM-driven layer-indicator LED (GP17) lights while `_QWERTY` is active and glows dimmer while `_FGHT` is active.
 
 ### QWERTY suspension
 While `_QWERTY` is selected, only the following keys temporarily reveal `_BASE` for the duration of the hold:
