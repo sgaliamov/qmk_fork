@@ -44,12 +44,12 @@ enum custom_keycodes {
     RBRC_SWAP,        // _BASE: } when unshifted, ] when shifted
     TD_TOGGLE,        // toggles the custom modifier tap-dance behavior on/off
     OS_FN,            // custom one-shot for _FN that survives (tap-dance) modifiers
-    UP_LEFT,          // sends W then A for one-input helper combos
-    UP_RIGHT,         // sends W then D for one-input helper combos
-    DOWN_LEFT,        // sends S then A for one-input helper combos
-    DOWN_RIGHT,       // sends S then D for one-input helper combos
-    LEFT_LEFT,        // sends A then A for one-input helper combos
-    RIGHT_RIGHT,      // sends D then D for one-input helper combos
+    UP_LEFT,          // holds W + A while held
+    UP_RIGHT,         // holds W + D while held
+    DOWN_LEFT,        // holds S + A while held
+    DOWN_RIGHT,       // holds S + D while held
+    LEFT_LEFT,        // taps A, then holds A while held
+    RIGHT_RIGHT,      // taps D, then holds D while held
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -377,6 +377,29 @@ void keyboard_post_init_user(void) {
     led_indicator_update(layer_state);
 }
 
+// _FGHT movement helpers: behave like physically pressing the keys.
+static void press_pair(uint16_t a, uint16_t b, bool pressed) {
+    if (pressed) {
+        register_code(a);
+        register_code(b);
+    } else {
+        unregister_code(b);
+        unregister_code(a);
+    }
+}
+
+static void press_double(uint16_t kc, bool pressed) {
+    if (pressed) {
+        register_code(kc);
+        wait_ms(2);
+        unregister_code(kc);
+        wait_ms(2);
+        register_code(kc);
+    } else {
+        unregister_code(kc);
+    }
+}
+
 // OS_FN — custom one-shot for _FN (see the comment block above os_fn_state):
 // _FN is the highest-priority layer, so while held or queued it always wins
 // over _QWERTY and keys resolve to the _FN (mirrored) positions. Modifiers —
@@ -500,58 +523,32 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             }
             return true; // Normal tap dance, including releases of existing dances
 
+        // Diagonals behave like physically pressing two keys: both held while
+        // the helper is held, both released when it is released.
         case UP_LEFT:
-            if (record->event.pressed) {
-                register_code(KC_W);
-                register_code(KC_A);
-                unregister_code(KC_A);
-                unregister_code(KC_W);
-            }
+            press_pair(KC_W, KC_A, record->event.pressed);
             return false;
 
         case UP_RIGHT:
-            if (record->event.pressed) {
-                register_code(KC_W);
-                register_code(KC_D);
-                unregister_code(KC_D);
-                unregister_code(KC_W);
-            }
+            press_pair(KC_W, KC_D, record->event.pressed);
             return false;
 
         case DOWN_LEFT:
-            if (record->event.pressed) {
-                register_code(KC_S);
-                register_code(KC_A);
-                unregister_code(KC_A);
-                unregister_code(KC_S);
-            }
+            press_pair(KC_S, KC_A, record->event.pressed);
             return false;
 
         case DOWN_RIGHT:
-            if (record->event.pressed) {
-                register_code(KC_S);
-                register_code(KC_D);
-                unregister_code(KC_D);
-                unregister_code(KC_S);
-            }
+            press_pair(KC_S, KC_D, record->event.pressed);
             return false;
 
+        // Double-tap helpers: tap once, then the second press is held for as
+        // long as the helper is held (e.g. dash into run).
         case LEFT_LEFT:
-            if (record->event.pressed) {
-                register_code(KC_A);
-                unregister_code(KC_A);
-                register_code(KC_A);
-                unregister_code(KC_A);
-            }
+            press_double(KC_A, record->event.pressed);
             return false;
 
         case RIGHT_RIGHT:
-            if (record->event.pressed) {
-                register_code(KC_D);
-                unregister_code(KC_D);
-                register_code(KC_D);
-                unregister_code(KC_D);
-            }
+            press_double(KC_D, record->event.pressed);
             return false;
 
         case ARROW_FAT:
