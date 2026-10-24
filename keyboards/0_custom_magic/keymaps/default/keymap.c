@@ -48,8 +48,6 @@ enum custom_keycodes {
     UP_RIGHT,         // holds W + D while held
     DOWN_LEFT,        // holds S + A while held
     DOWN_RIGHT,       // holds S + D while held
-    LEFT_LEFT,        // taps A, then holds A while held
-    RIGHT_RIGHT,      // taps D, then holds D while held
 };
 
 // Pressing both Shift keys simultaneously (held) toggles _BASE <-> _QWERTY.
@@ -104,7 +102,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_ESC,      KC_F1,       KC_F2,       KC_F3,       KC_F4,       KC_F5,       XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
         XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
         XXXXXXX,     UP_LEFT,     KC_W,        KC_W,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
-        KC_ENT,      LEFT_LEFT,   KC_A,        KC_D,        RIGHT_RIGHT, XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
+        KC_ENT,      KC_A,        KC_A,        KC_D,        KC_D,        XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
         XXXXXXX,     DOWN_LEFT,   KC_S,        KC_S,        DOWN_RIGHT,  TG(_FGHT),   XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
         KC_LALT,     OS_FN,       KC_APP,      KC_LCMD,     KC_LCTL,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
@@ -388,17 +386,6 @@ static void press_pair(uint16_t a, uint16_t b, bool pressed) {
     }
 }
 
-static void press_double(uint16_t kc, bool pressed) {
-    if (pressed) {
-        register_code(kc);
-        wait_ms(2);
-        unregister_code(kc);
-        wait_ms(2);
-        register_code(kc);
-    } else {
-        unregister_code(kc);
-    }
-}
 
 // OS_FN — custom one-shot for _FN (see the comment block above os_fn_state):
 // _FN is the highest-priority layer, so while held or queued it always wins
@@ -539,16 +526,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         case DOWN_RIGHT:
             press_pair(KC_S, KC_D, record->event.pressed);
-            return false;
-
-        // Double-tap helpers: tap once, then the second press is held for as
-        // long as the helper is held (e.g. dash into run).
-        case LEFT_LEFT:
-            press_double(KC_A, record->event.pressed);
-            return false;
-
-        case RIGHT_RIGHT:
-            press_double(KC_D, record->event.pressed);
             return false;
 
         case ARROW_FAT:
