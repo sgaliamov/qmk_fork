@@ -20,6 +20,13 @@ enum custom_keycodes {
     DOWN_RIGHT,
 };
 
+// Layer-indicator LED on GP17, driven by RP2040 PWM slice 0 channel B.
+#define LED_INDICATOR_PIN GP17
+#define LED_PWM_DRIVER   PWMD0
+#define LED_PWM_CHANNEL  1
+#define LED_PWM_PERIOD   256
+#define LED_PWM_FIGHT    80
+
 enum tap_dances {
     TD_LSFT,
     TD_RSFT,
@@ -50,11 +57,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_FGHT] = LAYOUT(
         KC_ESC,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     UP_LEFT,     KC_W,        KC_W,        UP_RIGHT,    XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     KC_A,        KC_A,        KC_D,        KC_D,        XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     DOWN_LEFT,   KC_S,        KC_S,        DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
+        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TEMP_EN,
+        XXXXXXX,     UP_LEFT,     UP_LEFT,     UP_RIGHT,    UP_RIGHT,    XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
+        XXXXXXX,     KC_S,        KC_A,        KC_D,        KC_W,        XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
+        XXXXXXX,     DOWN_LEFT,   DOWN_LEFT,   DOWN_RIGHT,  DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
+        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_LCTL,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
 };
 
@@ -98,6 +105,36 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_LCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &lctl_td_data},
     [TD_RCTL] = {.fn = {NULL, mod_td_finished, mod_td_reset}, .user_data = &rctl_td_data},
 };
+
+static PWMConfig led_pwm_cfg = {
+    .frequency = 1000000,
+    .period    = LED_PWM_PERIOD,
+    .channels  = {
+        [0] = {.mode = PWM_OUTPUT_DISABLED},
+        [1] = {.mode = PWM_OUTPUT_ACTIVE_HIGH},
+    },
+};
+
+static void led_indicator_update(layer_state_t state) {
+    if (LED_PWM_DRIVER.state != PWM_READY) return;
+
+    if (IS_LAYER_ON_STATE(state, _FGHT)) {
+        pwmEnableChannel(&LED_PWM_DRIVER, LED_PWM_CHANNEL, LED_PWM_FIGHT);
+    } else {
+        pwmDisableChannel(&LED_PWM_DRIVER, LED_PWM_CHANNEL);
+    }
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    led_indicator_update(state);
+    return state;
+}
+
+void keyboard_post_init_user(void) {
+    palSetLineMode(LED_INDICATOR_PIN, PAL_MODE_ALTERNATE_PWM);
+    pwmStart(&LED_PWM_DRIVER, &led_pwm_cfg);
+    led_indicator_update(layer_state);
+}
 
 void mod_td_finished(tap_dance_state_t *state, void *user_data) {
     mod_td_user_data_t *td = (mod_td_user_data_t *)user_data;
