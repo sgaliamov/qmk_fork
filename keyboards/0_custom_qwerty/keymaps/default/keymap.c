@@ -19,6 +19,10 @@ enum custom_keycodes {
     DOWN_LEFT,
     DOWN_RIGHT,
     TEMP_EN,
+    DASH_W,
+    DASH_A,
+    DASH_S,
+    DASH_D,
 };
 
 // Layer-indicator LED on GP17, driven by RP2040 PWM slice 0 channel B.
@@ -58,11 +62,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_FGHT] = LAYOUT(
         KC_ESC,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
+        XXXXXXX,     XXXXXXX,     DASH_W,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
         XXXXXXX,     UP_LEFT,     KC_W,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
-        XXXXXXX,     KC_A,        KC_S,        KC_D,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
-        XXXXXXX,     DOWN_LEFT,   KC_S,        DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
-        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_W,        KC_C,        KC_C,        XXXXXXX,             XXXXXXX,     KC_N,        KC_N,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
+        DASH_A,      KC_A,        KC_S,        KC_D,        DASH_D,      XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
+        XXXXXXX,     DOWN_LEFT,   DASH_S,      DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
+        KC_LALT,     XXXXXXX,     XXXXXXX,     DASH_W,      KC_W,        KC_C,        KC_C,        XXXXXXX,             XXXXXXX,     KC_N,        KC_N,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
 };
 
@@ -175,8 +179,150 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
     td->state = MOD_TD_NONE;
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+// Two short taps, separated by DASH_INTERVAL. After another interval, start
+// a normal hold only if the physical key is still down. Never block scanning
+// for the interval: a release must be processed before starting that hold.
+#define DASH_INTERVAL  500
+#define DASH_TAP_DURATION 1
+
+typedef enum {
+    DASH_IDLE,
+    DASH_WAIT_SECOND,
+    DASH_WAIT_HOLD,
+    DASH_HOLDING,
+} dash_phase_t;
+
+typedef struct {
+    uint16_t started;
+    uint16_t queued;
+    uint8_t  keycode;
+    bool     pressed;
+    dash_phase_t phase;
+} dash_state_t;
+
+static dash_state_t dash_keys[MATRIX_ROWS][MATRIX_COLS];
+static uint8_t normal_movement_keys[MATRIX_ROWS][MATRIX_COLS];
+static uint8_t movement_holds[4];
+
+static uint8_t movement_index(uint8_t keycode) {
     switch (keycode) {
+        case KC_W: return 0;
+        case KC_A: return 1;
+        case KC_S: return 2;
+        default:   return 3; // KC_D
+    }
+}
+
+// Normal keys, diagonals, and dash keys can share a direction without releasing one another.
+static void movement_press(uint8_t keycode) {
+    uint8_t *holds = &movement_holds[movement_index(keycode)];
+    if ((*holds)++ == 0) register_code(keycode);
+}
+
+static void movement_release(uint8_t keycode) {
+    uint8_t *holds = &movement_holds[movement_index(keycode)];
+    if (*holds && --(*holds) == 0) unregister_code(keycode);
+}
+
+static void dash_tap(uint8_t keycode) {
+    bool already_held = movement_holds[movement_index(keycode)] != 0;
+    if (already_held) {
+        unregister_code(keycode);
+        wait_ms(DASH_TAP_DURATION);
+    }
+    tap_code_delay(keycode, DASH_TAP_DURATION);
+    if (already_held) {
+        wait_ms(DASH_TAP_DURATION);
+        register_code(keycode);
+    }
+}
+
+static void dash_start(dash_state_t *dash) {
+    dash_tap(dash->keycode);
+    dash->started = timer_read();
+    dash->phase = DASH_WAIT_SECOND;
+}
+
+static void dash_press(dash_state_t *dash, uint8_t keycode) {
+    if (dash->pressed) return;
+    dash->pressed = true;
+    if (dash->phase == DASH_IDLE) {
+        dash->keycode = keycode;
+        dash->queued = 0;
+        dash_start(dash);
+    } else {
+        // Preserve a new tap even if the preceding pair has not finished yet.
+        dash->queued++;
+    }
+}
+
+static void dash_release(dash_state_t *dash) {
+    dash->pressed = false;
+    if (dash->phase == DASH_HOLDING) {
+        movement_release(dash->keycode);
+        dash->phase = DASH_IDLE;
+    } else if (dash->phase == DASH_WAIT_HOLD && dash->queued == 0) {
+        dash->phase = DASH_IDLE;
+    }
+    // A release before the second tap must not cancel that tap.
+}
+
+void matrix_scan_user(void) {
+    for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
+        for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+            dash_state_t *dash = &dash_keys[row][col];
+            if (timer_elapsed(dash->started) < DASH_INTERVAL) continue;
+            if (dash->phase == DASH_WAIT_SECOND) {
+                dash_tap(dash->keycode);
+                dash->started = timer_read();
+                dash->phase = (dash->pressed || dash->queued) ? DASH_WAIT_HOLD : DASH_IDLE;
+            } else if (dash->phase == DASH_WAIT_HOLD) {
+                if (dash->queued) {
+                    dash->queued--;
+                    dash_start(dash);
+                } else if (dash->pressed) {
+                    movement_press(dash->keycode);
+                    dash->phase = DASH_HOLDING;
+                } else {
+                    dash->phase = DASH_IDLE;
+                }
+            }
+        }
+    }
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.key.row < MATRIX_ROWS && record->event.key.col < MATRIX_COLS) {
+        dash_state_t *dash = &dash_keys[record->event.key.row][record->event.key.col];
+        if (!record->event.pressed && dash->pressed) {
+            dash_release(dash);
+            return false;
+        }
+        uint8_t *normal_movement = &normal_movement_keys[record->event.key.row][record->event.key.col];
+        if (!record->event.pressed && *normal_movement != KC_NO) {
+            movement_release(*normal_movement);
+            *normal_movement = KC_NO;
+            return false;
+        }
+        if (record->event.pressed && IS_LAYER_ON(_FGHT) && (keycode == KC_W || keycode == KC_A || keycode == KC_S || keycode == KC_D)) {
+            *normal_movement = keycode;
+            movement_press(keycode);
+            return false;
+        }
+    }
+
+    switch (keycode) {
+        case DASH_W:
+        case DASH_A:
+        case DASH_S:
+        case DASH_D: {
+            if (record->event.pressed && record->event.key.row < MATRIX_ROWS && record->event.key.col < MATRIX_COLS) {
+                static const uint8_t keys[] = {KC_W, KC_A, KC_S, KC_D};
+                dash_press(&dash_keys[record->event.key.row][record->event.key.col], keys[keycode - DASH_W]);
+            }
+            return false;
+        }
+
         case TEMP_EN:
             // Switch the OS input method on press and restore it on release.
             tap_code16(LGUI(KC_SPC));
@@ -208,41 +354,41 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         case UP_LEFT:
             if (record->event.pressed) {
-                register_code(KC_W);
-                register_code(KC_A);
+                movement_press(KC_W);
+                movement_press(KC_A);
             } else {
-                unregister_code(KC_A);
-                unregister_code(KC_W);
+                movement_release(KC_A);
+                movement_release(KC_W);
             }
             return false;
 
         case UP_RIGHT:
             if (record->event.pressed) {
-                register_code(KC_W);
-                register_code(KC_D);
+                movement_press(KC_W);
+                movement_press(KC_D);
             } else {
-                unregister_code(KC_D);
-                unregister_code(KC_W);
+                movement_release(KC_D);
+                movement_release(KC_W);
             }
             return false;
 
         case DOWN_LEFT:
             if (record->event.pressed) {
-                register_code(KC_S);
-                register_code(KC_A);
+                movement_press(KC_S);
+                movement_press(KC_A);
             } else {
-                unregister_code(KC_A);
-                unregister_code(KC_S);
+                movement_release(KC_A);
+                movement_release(KC_S);
             }
             return false;
 
         case DOWN_RIGHT:
             if (record->event.pressed) {
-                register_code(KC_S);
-                register_code(KC_D);
+                movement_press(KC_S);
+                movement_press(KC_D);
             } else {
-                unregister_code(KC_D);
-                unregister_code(KC_S);
+                movement_release(KC_D);
+                movement_release(KC_S);
             }
             return false;
 
