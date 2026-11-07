@@ -58,10 +58,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_FGHT] = LAYOUT(
         KC_ESC,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
         XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
-        XXXXXXX,     UP_LEFT,     UP_LEFT,     UP_RIGHT,    UP_RIGHT,    XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
-        XXXXXXX,     KC_W,        KC_A,        KC_D,        KC_S,        XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
-        XXXXXXX,     DOWN_LEFT,   DOWN_LEFT,   DOWN_RIGHT,  DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
-        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_LCTL,     KC_SPC,      KC_LSFT,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
+        XXXXXXX,     UP_LEFT,     KC_W,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
+        XXXXXXX,     KC_A,        KC_S,        KC_D,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
+        XXXXXXX,     DOWN_LEFT,   XXXXXXX,     DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
+        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_W,        KC_W,        KC_S,        XXXXXXX,             XXXXXXX,     KC_C,        KC_N,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
 };
 
