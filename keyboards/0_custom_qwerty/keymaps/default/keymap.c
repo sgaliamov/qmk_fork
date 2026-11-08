@@ -92,6 +92,7 @@ static mod_td_user_data_t lsft_td_data = {MOD_TD_NONE, KC_LSFT, MOD_BIT(KC_LALT)
 static mod_td_user_data_t rsft_td_data = {MOD_TD_NONE, KC_RSFT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RSFT)};
 static mod_td_user_data_t lalt_td_data = {MOD_TD_NONE, KC_LALT, MOD_BIT(KC_LALT) | MOD_BIT(KC_RCTL)};
 
+/** Classify a modifier gesture by tap count and whether the key is still down. */
 static mod_td_state_t resolve_mod_td(tap_dance_state_t *state) {
     if (state->count == 1) return state->pressed ? MOD_TD_SINGLE_HOLD : MOD_TD_SINGLE_TAP;
     if (state->count == 2) return state->pressed ? MOD_TD_DOUBLE_HOLD : MOD_TD_DOUBLE_TAP;
@@ -120,6 +121,7 @@ static PWMConfig led_pwm_cfg = {
     },
 };
 
+/** Set the indicator brightness for the fighting layer, once PWM is ready. */
 static void led_indicator_update(layer_state_t state) {
     if (LED_PWM_DRIVER.state != PWM_READY) return;
 
@@ -130,17 +132,20 @@ static void led_indicator_update(layer_state_t state) {
     }
 }
 
+/** Refresh the indicator on layer changes without modifying the layer state. */
 layer_state_t layer_state_set_user(layer_state_t state) {
     led_indicator_update(state);
     return state;
 }
 
+/** Initialize the indicator pin and PWM driver after keyboard startup. */
 void keyboard_post_init_user(void) {
     palSetLineMode(LED_INDICATOR_PIN, PAL_MODE_ALTERNATE_PWM);
     pwmStart(&LED_PWM_DRIVER, &led_pwm_cfg);
     led_indicator_update(layer_state);
 }
 
+/** Emit modifier taps or register the modifier combination for a resolved hold. */
 void mod_td_finished(tap_dance_state_t *state, void *user_data) {
     mod_td_user_data_t *td = (mod_td_user_data_t *)user_data;
     td->state = resolve_mod_td(state);
@@ -164,6 +169,7 @@ void mod_td_finished(tap_dance_state_t *state, void *user_data) {
     }
 }
 
+/** Release the modifiers owned by the completed tap dance and reset its state. */
 void mod_td_reset(tap_dance_state_t *state, void *user_data) {
     mod_td_user_data_t *td = (mod_td_user_data_t *)user_data;
     switch (td->state) {
@@ -179,31 +185,37 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
     td->state = MOD_TD_NONE;
 }
 
-// Two short taps, separated by DASH_INTERVAL. After another interval, start
-// a normal hold only if the physical key is still down. Never block scanning
-// for the interval: a release must be processed before starting that hold.
-#define DASH_INTERVAL  500
-#define DASH_TAP_DURATION 1
+// Dash timing, in milliseconds:
+//   tap:  down --2 ms-- up --4 ms-- down --at least 2 ms-- up
+//   hold: down --2 ms-- up --4 ms-- down until physical release
+// The second press IS the hold: there is no third press or hold threshold.
+// If released early, finish both presses anyway. If still held, the second
+// press lasts until release, just like a normal key. Scan scheduling and USB
+// polling can extend these minimum durations slightly.
+#define DASH_PRESS_MS 2
+#define DASH_GAP_MS   4
 
 typedef enum {
     DASH_IDLE,
     DASH_WAIT_SECOND,
-    DASH_WAIT_HOLD,
-    DASH_HOLDING,
+    DASH_SECOND_DOWN,
+    DASH_WAIT_NEXT,
 } dash_phase_t;
 
 typedef struct {
-    uint16_t started;
-    uint16_t queued;
-    uint8_t  keycode;
-    bool     pressed;
+    uint16_t     started; // Start of the current gap or second press.
+    uint16_t     queued;  // Rapid re-presses received before this pair finished.
+    uint8_t      keycode;
+    bool         pressed; // Physical state, independent of pending output.
     dash_phase_t phase;
 } dash_state_t;
 
+// Track physical positions so duplicate bindings and layer changes are safe.
 static dash_state_t dash_keys[MATRIX_ROWS][MATRIX_COLS];
 static uint8_t normal_movement_keys[MATRIX_ROWS][MATRIX_COLS];
 static uint8_t movement_holds[4];
 
+/** Map a movement key (W, A, S, or D only) to its shared hold counter. */
 static uint8_t movement_index(uint8_t keycode) {
     switch (keycode) {
         case KC_W: return 0;
@@ -213,36 +225,32 @@ static uint8_t movement_index(uint8_t keycode) {
     }
 }
 
-// Normal keys, diagonals, and dash keys can share a direction without releasing one another.
+/** Acquire a shared direction and ensure it is down, including after a dash gap. */
 static void movement_press(uint8_t keycode) {
-    uint8_t *holds = &movement_holds[movement_index(keycode)];
-    if ((*holds)++ == 0) register_code(keycode);
+    movement_holds[movement_index(keycode)]++;
+    register_code(keycode);
 }
 
+/** Release a direction only when no normal key, diagonal, or dash owns it. */
 static void movement_release(uint8_t keycode) {
     uint8_t *holds = &movement_holds[movement_index(keycode)];
     if (*holds && --(*holds) == 0) unregister_code(keycode);
 }
 
-static void dash_tap(uint8_t keycode) {
-    bool already_held = movement_holds[movement_index(keycode)] != 0;
-    if (already_held) {
-        unregister_code(keycode);
-        wait_ms(DASH_TAP_DURATION);
-    }
-    tap_code_delay(keycode, DASH_TAP_DURATION);
-    if (already_held) {
-        wait_ms(DASH_TAP_DURATION);
-        register_code(keycode);
-    }
-}
-
+/** Send the first short press, then schedule the gap before the second press. */
 static void dash_start(dash_state_t *dash) {
-    dash_tap(dash->keycode);
+    if (movement_holds[movement_index(dash->keycode)] != 0) {
+        // Re-trigger a direction already held by another key. Preserve its
+        // logical ownership; the second press restores the shared direction.
+        unregister_code(dash->keycode);
+        wait_ms(DASH_GAP_MS);
+    }
+    tap_code_delay(dash->keycode, DASH_PRESS_MS);
     dash->started = timer_read();
     dash->phase = DASH_WAIT_SECOND;
 }
 
+/** Start one dash per physical press, queuing unusually rapid re-presses. */
 static void dash_press(dash_state_t *dash, uint8_t keycode) {
     if (dash->pressed) return;
     dash->pressed = true;
@@ -256,41 +264,47 @@ static void dash_press(dash_state_t *dash, uint8_t keycode) {
     }
 }
 
+/** End the second press and leave an inter-pair gap if another dash is queued. */
+static void dash_finish(dash_state_t *dash) {
+    movement_release(dash->keycode);
+    dash->started = timer_read();
+    dash->phase = dash->queued ? DASH_WAIT_NEXT : DASH_IDLE;
+}
+
+/** Release immediately unless the second press still needs its minimum duration. */
 static void dash_release(dash_state_t *dash) {
     dash->pressed = false;
-    if (dash->phase == DASH_HOLDING) {
-        movement_release(dash->keycode);
-        dash->phase = DASH_IDLE;
-    } else if (dash->phase == DASH_WAIT_HOLD && dash->queued == 0) {
-        dash->phase = DASH_IDLE;
+    if (dash->phase == DASH_SECOND_DOWN && timer_elapsed(dash->started) >= DASH_PRESS_MS) {
+        dash_finish(dash);
     }
     // A release before the second tap must not cancel that tap.
 }
 
+/** Advance scheduled output; only the short first-press pulse uses blocking waits. */
 void matrix_scan_user(void) {
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         for (uint8_t col = 0; col < MATRIX_COLS; col++) {
             dash_state_t *dash = &dash_keys[row][col];
-            if (timer_elapsed(dash->started) < DASH_INTERVAL) continue;
-            if (dash->phase == DASH_WAIT_SECOND) {
-                dash_tap(dash->keycode);
+            uint16_t elapsed = timer_elapsed(dash->started);
+            if (dash->phase == DASH_WAIT_SECOND && elapsed >= DASH_GAP_MS) {
+                // Leave the second press down while physically held; never
+                // release and re-register it to enter a separate hold state.
+                movement_press(dash->keycode);
                 dash->started = timer_read();
-                dash->phase = (dash->pressed || dash->queued) ? DASH_WAIT_HOLD : DASH_IDLE;
-            } else if (dash->phase == DASH_WAIT_HOLD) {
-                if (dash->queued) {
-                    dash->queued--;
-                    dash_start(dash);
-                } else if (dash->pressed) {
-                    movement_press(dash->keycode);
-                    dash->phase = DASH_HOLDING;
-                } else {
-                    dash->phase = DASH_IDLE;
+                dash->phase = DASH_SECOND_DOWN;
+            } else if (dash->phase == DASH_SECOND_DOWN && elapsed >= DASH_PRESS_MS) {
+                if (!dash->pressed || dash->queued) {
+                    dash_finish(dash);
                 }
+            } else if (dash->phase == DASH_WAIT_NEXT && elapsed >= DASH_GAP_MS) {
+                dash->queued--;
+                dash_start(dash);
             }
         }
     }
 }
 
+/** Route position-tracked movement releases, dash presses, and other custom keys. */
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.key.row < MATRIX_ROWS && record->event.key.col < MATRIX_COLS) {
         dash_state_t *dash = &dash_keys[record->event.key.row][record->event.key.col];
