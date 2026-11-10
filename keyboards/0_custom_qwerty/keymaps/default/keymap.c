@@ -47,8 +47,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
         KC_TAB,      KC_Q,        KC_W,        KC_E,        KC_R,        KC_T,        KC_CAPS,     XXXXXXX,             XXXXXXX,     KC_PAUS,     KC_Y,        KC_U,        KC_I,        KC_O,        KC_P,        KC_LBRC,
         KC_ENT,      KC_A,        KC_S,        KC_D,        KC_F,        KC_G,        KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     KC_H,        KC_J,        KC_K,        KC_L,        KC_SCLN,     KC_ENT,
-        KC_DEL,      KC_Z,        KC_X,        KC_C,        KC_V,        KC_B,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TEMP_EN,     KC_DOWN
+        KC_BSLS,     KC_Z,        KC_X,        KC_C,        KC_V,        KC_B,        KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      KC_N,        KC_M,        KC_COMM,     KC_DOT,      KC_UP,       KC_INS,
+        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_DEL,              KC_BSPC,     TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TEMP_EN,     KC_DOWN
     ),
 
     [_FN] = LAYOUT(
@@ -56,8 +56,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV,      KC_1,        KC_2,        KC_3,        KC_4,        KC_5,        KC_F6,       XXXXXXX,             XXXXXXX,     KC_F7,       KC_6,        KC_7,        KC_8,        KC_9,        KC_0,        KC_RBRC,
         KC_TAB,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     TD_TOGGLE,   TG(_FGHT),   XXXXXXX,             XXXXXXX,     KC_NUM,      KC_P0,       KC_P1,       KC_P2,       KC_P3,       XXXXXXX,     KC_LBRC,
         KC_PEQL,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_SLSH,     KC_HOME,             KC_PGUP,     KC_QUOT,     ARROW_FAT,   KC_P4,       KC_P5,       KC_P6,       KC_SCLN,     KC_PEQL,
-        KC_DEL,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_BSPC,
-        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_BSLS,             KC_INS,      TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TEMP_EN,     KC_RALT
+        KC_BSLS,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_MINS,     KC_END,              KC_PGDN,     KC_EQL,      ARROW_THIN,  KC_P7,       KC_P8,       KC_P9,       KC_UP,       KC_INS,
+        TD(TD_LALT), MO(_FN),     KC_APP,      KC_LCMD,     TD(TD_LCTL), KC_SPC,      TD(TD_LSFT), KC_DEL,              KC_BSPC,     TD(TD_RSFT), KC_SPC,      TD(TD_RCTL), KC_LEFT,     KC_RGHT,     TEMP_EN,     KC_RALT
     ),
 
     [_FGHT] = LAYOUT(
@@ -65,8 +65,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         XXXXXXX,     XXXXXXX,     DASH_W,      XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
         XXXXXXX,     UP_LEFT,     KC_W,        UP_RIGHT,    XXXXXXX,     XXXXXXX,     TG(_FGHT),   XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_O,        KC_U,        KC_I,        KC_P,        XXXXXXX,     XXXXXXX,
         DASH_A,      KC_A,        KC_S,        KC_D,        DASH_D,      XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_L,        KC_J,        KC_K,        KC_SCLN,     XXXXXXX,     KC_ENT,
-        XXXXXXX,     DOWN_LEFT,   DASH_S,      DOWN_RIGHT,  XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     KC_V,        KC_C,        KC_N,        KC_B,        XXXXXXX,     XXXXXXX,
-        KC_LALT,     XXXXXXX,     XXXXXXX,     DASH_W,      KC_W,        KC_C,        KC_C,        XXXXXXX,             XXXXXXX,     KC_N,        KC_N,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
+        XXXXXXX,     DOWN_LEFT,   DASH_S,      DOWN_RIGHT,  KC_V,        KC_B,        XXXXXXX,     XXXXXXX,             XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,
+        KC_LALT,     XXXXXXX,     XXXXXXX,     XXXXXXX,     KC_W,        KC_C,        KC_C,        KC_DEL,              KC_BSPC,     KC_N,        KC_N,        XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX,     XXXXXXX
     )
 };
 
@@ -186,14 +186,17 @@ void mod_td_reset(tap_dance_state_t *state, void *user_data) {
 }
 
 // Dash timing, in milliseconds:
-//   tap:  down --2 ms-- up --4 ms-- down --at least 2 ms-- up
-//   hold: down --2 ms-- up --4 ms-- down until physical release
+//   tap:  down --20 ms-- up --20 ms-- down --at least 10 ms-- up
+//   hold: down --20 ms-- up --20 ms-- down until physical release
+// The first press and gap exceed one 60 Hz frame (~16.7 ms), but a short
+// second press may still be missed by games that sample input per frame.
 // The second press IS the hold: there is no third press or hold threshold.
 // If released early, finish both presses anyway. If still held, the second
 // press lasts until release, just like a normal key. Scan scheduling and USB
 // polling can extend these minimum durations slightly.
-#define DASH_PRESS_MS 2
-#define DASH_GAP_MS   4
+#define DASH_PRESS_MS        20
+#define DASH_GAP_MS          20
+#define DASH_SECOND_PRESS_MS  10
 
 typedef enum {
     DASH_IDLE,
@@ -274,7 +277,7 @@ static void dash_finish(dash_state_t *dash) {
 /** Release immediately unless the second press still needs its minimum duration. */
 static void dash_release(dash_state_t *dash) {
     dash->pressed = false;
-    if (dash->phase == DASH_SECOND_DOWN && timer_elapsed(dash->started) >= DASH_PRESS_MS) {
+    if (dash->phase == DASH_SECOND_DOWN && timer_elapsed(dash->started) >= DASH_SECOND_PRESS_MS) {
         dash_finish(dash);
     }
     // A release before the second tap must not cancel that tap.
@@ -292,7 +295,7 @@ void matrix_scan_user(void) {
                 movement_press(dash->keycode);
                 dash->started = timer_read();
                 dash->phase = DASH_SECOND_DOWN;
-            } else if (dash->phase == DASH_SECOND_DOWN && elapsed >= DASH_PRESS_MS) {
+            } else if (dash->phase == DASH_SECOND_DOWN && elapsed >= DASH_SECOND_PRESS_MS) {
                 if (!dash->pressed || dash->queued) {
                     dash_finish(dash);
                 }
